@@ -24,20 +24,14 @@ np.random.seed(seed)
 SAMPLES = [os.path.basename(f).replace(".fasta", "").replace(".fa", "") for f in glob.glob("AMR_contexts/*")]
 DEPTHS = [5, 10, 20, 40, 80]
 
-def aggregate_outputs(wildcards):
-    return expand(os.path.join(output_dir, "amira" + "_{depth}", "{sample}"), depth=DEPTHS, sample=SAMPLES)
-
-def aggregate_stats(wildcards):
-    return expand(os.path.join(output_dir, "summary_stats", "{sample}"), sample=SAMPLES)
-
 def aggregate_assems(wildcards):
     return expand(os.path.join("simulated_assemblies", "{sample}.fasta"), sample=SAMPLES)
 
 def aggregate_flye(wildcards):
     return expand(os.path.join(output_dir, "AMRFP_flye" + "_{depth}", "{sample}", "AMR_finder_plus_results.tsv"), depth=DEPTHS, sample=SAMPLES)
 
-def aggregate_unicycler(wildcards):
-    return expand(os.path.join(output_dir, "AMRFP_unicycler" + "_{depth}", "{sample}", "AMR_finder_plus_results.tsv"), depth=DEPTHS, sample=SAMPLES)
+def aggregate_amira(wildcards):
+    return expand(os.path.join(output_dir, "amira" + "_{depth}", "{sample}"), depth=DEPTHS, sample=SAMPLES)
 
 # Define the workflow
 rule all:
