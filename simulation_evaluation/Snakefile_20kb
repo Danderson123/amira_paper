@@ -2,7 +2,6 @@
 
 import os
 import random
-from Bio import SeqIO
 from tqdm import tqdm
 import numpy as np
 import json
