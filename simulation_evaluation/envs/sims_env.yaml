@@ -5,16 +5,14 @@ channels:
  - nodefaults
 dependencies:
  - python=3.10.14
+ - pip
  - snakemake=7.32.4
- - biopython=1.79
- - minimap2=2.28
- - samtools=1.20
  - tqdm=4.67.0
  - numpy=1.26.4
- - badread=0.4.1
  - pandas=2.2.2
  - matplotlib=3.9.2
  - singularity
+ - mamba
  - ncbi-amrfinderplus=3.12.8
  - pip:
     - pysam==0.22.1

@@ -18,3 +18,10 @@ There are four Snakefiles in this directory, each corresponding to simulation fo
 ```{bash}
 snakemake --snakefile Snakefile_5kb --cores 12 --use-conda --nolock --rerun-incomplete --keep-going 
 ```
+
+# Generating results
+
+The final plots can be generated with this command:
+```{bash}
+python3 
+```
