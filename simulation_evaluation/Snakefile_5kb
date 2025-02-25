@@ -1,0 +1,488 @@
+#!/usr/bin/env python
+
+import os
+import random
+from Bio import SeqIO
+from tqdm import tqdm
+import numpy as np
+import json
+import pyfastaq
+import pandas as pd
+import json
+import glob
+import statistics
+import matplotlib.pyplot as plt
+
+# Define the parameters
+AMR_allele_file = "AMR_alleles_unified.fa"
+output_dir = 'simulations_5kb_r10'
+badread_length = "5000,6615.5"
+seed = 42  # Seed for reproducibility
+# Set the seed for random and numpy
+random.seed(seed)
+np.random.seed(seed)
+
+SAMPLES = [os.path.basename(f).replace(".fasta", "").replace(".fa", "") for f in glob.glob("AMR_contexts/*")]
+DEPTHS = [5, 10, 20, 40, 80]
+
+def aggregate_outputs(wildcards):
+    return expand(os.path.join(output_dir, "amira" + "_{depth}", "{sample}"), depth=DEPTHS, sample=SAMPLES)
+
+def aggregate_stats(wildcards):
+    return expand(os.path.join(output_dir, "summary_stats", "{sample}"), sample=SAMPLES)
+
+def aggregate_assems(wildcards):
+    return expand(os.path.join("simulated_assemblies", "{sample}.fasta"), sample=SAMPLES)
+
+def aggregate_flye(wildcards):
+    return expand(os.path.join(output_dir, "AMRFP_flye" + "_{depth}", "{sample}", "AMR_finder_plus_results.tsv"), depth=DEPTHS, sample=SAMPLES)
+
+def aggregate_unicycler(wildcards):
+    return expand(os.path.join(output_dir, "AMRFP_unicycler" + "_{depth}", "{sample}", "AMR_finder_plus_results.tsv"), depth=DEPTHS, sample=SAMPLES)
+
+# Define the workflow
+rule all:
+    input:
+        aggregate_outputs,
+        aggregate_stats,
+        aggregate_flye,
+        aggregate_unicycler
+
+# Snakemake rule for simulating assemblies
+rule simulate_assembly:
+    input:
+        reference_genome="reference_genome.fasta",
+        reference_plasmid="reference_plasmid.fasta",
+        context_fasta= lambda wildcards: os.path.join("AMR_contexts", wildcards.sample + ".fasta")
+    output:
+        os.path.join('simulated_assemblies', "{sample}.fasta")
+    params:
+        allele_file=AMR_allele_file
+    run:
+        # Load the reference assembly
+        genome = pyfastaq.sequences.file_reader(input.reference_genome)
+        # Get the genome length and sequence
+        genome_length, genome_seq = 0, ""
+        for sequence in genome:
+            genome_length = len(sequence.seq)
+            genome_seq = str(sequence.seq)
+
+        # Load the reference plasmid
+        plasmid = pyfastaq.sequences.file_reader(input.reference_plasmid)
+        # Get the plasmid length and sequence
+        plasmid_length, plasmid_seq = 0, ""
+        for sequence in plasmid:
+            plasmid_length = len(sequence.seq)
+            plasmid_seq = str(sequence.seq)
+
+        # get the true amr gene content of the block
+        try:
+            out_gff = output[0].replace('.fasta', '.AMR_content.gff')
+            shell("python3 scripts/make_truth_with_minimap.py {input.context_fasta} {params.allele_file} {out_gff}")
+            # process the gff file
+            gff_content = {}
+            with open(out_gff) as i:
+                annotations, sequence = i.read().split("##FASTA")
+            for line in annotations.split("\n"):
+                if not line.startswith("#"):
+                    if line == "":
+                        continue
+                    region, source, a_type, start, end, _, strand, dot, feature = line.split("\t")
+                    if region not in gff_content:
+                        gff_content[region] = []
+                    gff_content[region].append((int(start) - 1, int(end) - int(start), feature.replace("Name=", ""), strand))
+            for r in gff_content:
+                gff_content[r] = sorted(gff_content[r], key=lambda x: x[0])
+        except:
+            pass
+        # Load the context file
+        context = pyfastaq.sequences.file_reader(input.context_fasta)
+        # Decide where we are putting the AMR blocks
+        block_insertions = [[], []]
+        for sequence in context:
+            if "_chromosome" in sequence.id:
+                block_insertions[0].append((sequence.id, str(sequence.seq)))
+            elif "_plasmid" in sequence.id:
+                block_insertions[1].append((sequence.id, str(sequence.seq)))
+        # decide where the blocks will be inserted in the chromosome
+        chromosome_insertions = sorted(random.sample(range(len(genome_seq)), len(block_insertions[0])))
+        # decide where the blocks will be inserted in the plasmid
+        plasmid_insertions = sorted(random.sample(range(len(plasmid_seq)), len(block_insertions[1])))
+        # decide the plasmid copy number
+        plasmid_copy_number = random.randint(1, 10)
+        # split the chromosome into blocks at the insertion points
+        chromosome_fragments = []
+        next_start = 0
+        for position in chromosome_insertions:
+            chromosome_fragments.append(genome_seq[next_start:position])
+            next_start = position
+        chromosome_fragments.append(genome_seq[next_start:])
+        # split the plasmid into blocks at the insertion points
+        plasmid_fragments = []
+        next_start = 0
+        for position in plasmid_insertions:
+            plasmid_fragments.append(plasmid_seq[next_start:position])
+            next_start = position
+        plasmid_fragments.append(plasmid_seq[next_start:])
+        # collect amr gene positions
+        context_tsv = ["Allele name\tContig\tStart\tEnd\tLength\tStrand\tCopy number"]
+        # get the chromsome assembly
+        simulated_chromosome = []
+        offset = 0
+        for i in range(len(chromosome_insertions)):
+            simulated_chromosome.append(chromosome_fragments[i])
+            simulated_chromosome.append(block_insertions[0][i][1])
+            adjusted_start = offset + chromosome_insertions[i] + 1
+            if block_insertions[0][i][0] in gff_content:
+                for amr_start, amr_length, amr_allele, amr_strand in gff_content[block_insertions[0][i][0]]:
+                    context_tsv.append(f"{amr_allele}\tchromosome\t{adjusted_start + amr_start}\t{adjusted_start + amr_start + amr_length}\t{amr_length}\t{amr_strand}\t1")
+            offset += len(block_insertions[0][i][1])
+        simulated_chromosome.append(chromosome_fragments[-1])
+        # get the plasmid assembly
+        simulated_plasmid = []
+        offset = 0
+        for i in range(len(plasmid_insertions)):
+            simulated_plasmid.append(plasmid_fragments[i])
+            simulated_plasmid.append(block_insertions[1][i][1])
+            adjusted_start = offset + plasmid_insertions[i] + 1
+            if block_insertions[1][i][0] in gff_content:
+                for amr_start, amr_length, amr_allele, amr_strand in gff_content[block_insertions[1][i][0]]:
+                    context_tsv.append(f"{amr_allele}\tplasmid\t{adjusted_start + amr_start}\t{adjusted_start + amr_start + amr_length}\t{amr_length}\t{amr_strand}\t{plasmid_copy_number}")
+            offset += len(block_insertions[1][i][1])
+        simulated_plasmid.append(plasmid_fragments[-1])
+        # make the simulated assembly
+        simulated_assembly = []
+        simulated_chromosome_header = ">contig_1,circular=true"
+        simulated_assembly.append(simulated_chromosome_header)
+        simulated_assembly.append("".join(simulated_chromosome))
+        for i in range(plasmid_copy_number):
+            plasmid_header = f">plasmid_{i + 1},circular=true"
+            simulated_assembly.append(plasmid_header)
+            simulated_assembly.append("".join(simulated_plasmid))
+        # Join the simulated assembly into a single string
+        simulated_assembly_str = "\n".join(simulated_assembly)
+        # write the outputs
+        if not os.path.exists(os.path.dirname(output[0])):
+            os.mkdir(os.path.dirname(output[0]))
+        with open(output[0], "w") as o:
+            o.write(simulated_assembly_str)
+        with open(output[0].replace(".fasta", ".AMR_genes.tsv"), "w") as o:
+            o.write("\n".join(context_tsv))
+
+rule simulate_r_10_reads:
+    input:
+        assembly=os.path.join("simulated_assemblies", "{sample}.fasta")
+    output:
+        os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq")
+    resources:
+        mem_mb=30000, threads=1
+    threads: 1
+    params:
+        sim_depth="{depth}",
+        mean_length=badread_length
+    shell:
+        "badread simulate --seed 2024 --length {params.mean_length} --error_model nanopore2023 --qscore_model nanopore2023 --reference {input.assembly} --quantity {params.sim_depth}x > {output}"
+
+rule run_amira:
+    input:
+        readfile=os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq")
+    output:
+        directory(os.path.join(output_dir, "amira" + "_{depth}", "{sample}"))
+    threads: 5
+    resources:
+        mem_mb=lambda wildcards, attempt: 50000 * attempt, threads=5, runtime=7200
+    params:
+        panRG="AMR_supplemented_panRG.k15.w5.panidx.zip",
+        species="Escherichia_coli"
+    shell:
+        "singularity run amira.img amira --pandora-path /hps/nobackup/iqbal/dander/Amira_truth_evaluation/software/pandora-linux-precompiled-v0.12.0-alpha.0 --reads {input.readfile} --output {output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+
+
+rule unicycler_assemble:
+    input:
+        readfile=os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq")
+    output:
+        directory(os.path.join(output_dir, "unicycler" + "_{depth}", "{sample}"))
+    threads: 4
+    resources:
+        mem_mb=100000
+    conda: "envs/unicycler.yaml"
+    shell:
+        """
+        {{
+            unicycler -l {input.readfile} -o {output} -t {threads} --keep 3
+        }} || {{
+            mkdir -p {output} && touch {output}/assembly.fasta
+        }}
+        """
+
+rule flye_assemble:
+    input:
+        readfile=os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq")
+    output:
+        directory(os.path.join(output_dir, "flye" + "_{depth}", "{sample}"))
+    threads: 4
+    resources:
+        mem_mb=100000
+    conda: "envs/flye.yaml"
+    shell:
+        "flye -g 5M -o {output} -t {threads} -i 2 --nano-raw {input.readfile}"
+
+rule run_amrfp_on_unicycler:
+    input:
+        os.path.join(output_dir, "unicycler" + "_{depth}", "{sample}")
+    output:
+        outdir=directory(os.path.join(output_dir, "AMRFP_unicycler" + "_{depth}", "{sample}")),
+        outfile=os.path.join(output_dir, "AMRFP_unicycler" + "_{depth}", "{sample}", "AMR_finder_plus_results.tsv")
+    threads: 4
+    resources:
+        mem_mb=15000
+    shell:
+        "mkdir -p {output.outdir} && amrfinder -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
+
+rule run_amrfp_on_flye:
+    input:
+        os.path.join(output_dir, "flye" + "_{depth}", "{sample}")
+    output:
+        outdir=directory(os.path.join(output_dir, "AMRFP_flye" + "_{depth}", "{sample}")),
+        outfile=os.path.join(output_dir, "AMRFP_flye" + "_{depth}", "{sample}", "AMR_finder_plus_results.tsv")
+    threads: 4
+    resources:
+        mem_mb=15000
+    shell:
+        "mkdir -p {output.outdir} && amrfinder -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
+
+
+rule make_result_plots:
+    input:
+        amira_5=os.path.join(output_dir, "amira" + "_5", "{sample}"),
+        amira_10=os.path.join(output_dir, "amira" + "_10", "{sample}"),
+        amira_20=os.path.join(output_dir, "amira" + "_20", "{sample}"),
+        amira_40=os.path.join(output_dir, "amira" + "_40", "{sample}"),
+        truth_content=os.path.join('simulated_assemblies', "{sample}.fasta"),
+        flye_5=os.path.join(output_dir, "AMRFP_flye" + "_5", "{sample}", "AMR_finder_plus_results.tsv"),
+        flye_10=os.path.join(output_dir, "AMRFP_flye" + "_10", "{sample}", "AMR_finder_plus_results.tsv"),
+        flye_20=os.path.join(output_dir, "AMRFP_flye" + "_20", "{sample}", "AMR_finder_plus_results.tsv"),
+        flye_40=os.path.join(output_dir, "AMRFP_flye" + "_40", "{sample}", "AMR_finder_plus_results.tsv"),
+        unicycler_5=os.path.join(output_dir, "AMRFP_unicycler" + "_5", "{sample}", "AMR_finder_plus_results.tsv"),
+        unicycler_10=os.path.join(output_dir, "AMRFP_unicycler" + "_10", "{sample}", "AMR_finder_plus_results.tsv"),
+        unicycler_20=os.path.join(output_dir, "AMRFP_unicycler" + "_20", "{sample}", "AMR_finder_plus_results.tsv"),
+        unicycler_40=os.path.join(output_dir, "AMRFP_unicycler" + "_40", "{sample}", "AMR_finder_plus_results.tsv"),
+    output:
+        directory(os.path.join(output_dir, "summary_stats", "{sample}"))
+    resources:
+        mem_mb=10000, threads=1
+    threads: 1
+    run:
+
+        def apply_rules(gene):
+            if "blaCTX-M" in gene:
+                gene = "blaCTX-M"
+            if "blaNDM" in gene:
+                gene = "blaNDM"
+            if "blaOXA" in gene:
+                gene = "blaOXA"
+            if "aac(6')-Ib" in gene:
+                gene = "aac(6')-Ib"
+            if "blaEC" in gene:
+                gene = "blaEC"
+            if "oqx" in gene:
+                gene = "oqx"
+            if "blaTEM" in gene:
+                gene = "blaTEM"
+            if "fosA" in gene:
+                gene = "fosA"
+            if "blaCMY" in gene:
+                gene = "blaCMY"
+            if "aadA" in gene:
+                gene = "aadA"
+            if "arr-" in gene:
+                gene = "arr-"
+            if "dfrA" in gene:
+                gene = "dfrA"
+            if "rmtB" in gene:
+                gene = "rmtB"
+            if "aac(3)-II" in gene and "aac(3)-III" not in gene:
+                gene = "aac(3)-II"
+            if "aac(3)-III" in gene:
+                gene = "aac(3)-III"
+            if "blaSHV" in gene:
+                gene = "blaSHV"
+            if "qnrS" in gene:
+                gene = "qnrS"
+            if "aac(3)-I" in gene and "aac(3)-II" not in gene and "aac(3)-III" not in gene:
+                gene = "aac(3)-I"
+            if "blaKPC" in gene:
+                gene = "blaKPC"
+            if "mcr-5" in gene:
+                gene = "mcr-5"
+            if "qnrB" in gene:
+                gene = "qnrB"
+            if "cmlA" in gene:
+                gene = "cmlA"
+            if "aph(3'')-I" in gene and "aph(3'')-II" not in gene and "aph(3'')-III" not in gene:
+                gene = "aph(3)-I"
+            if "aph(3'')-II" in gene and "aph(3'')-III" not in gene:
+                gene = "aph(3)-II"
+            if "aph(3'')-III" in gene:
+                gene = "aph(3)-III"
+            if "aph(3')-I" in gene and "aph(3')-II" not in gene and "aph(3')-III" not in gene:
+                gene = "aph(3)-I"
+            if "aph(3')-II" in gene and "aph(3')-III" not in gene:
+                gene = "aph(3)-II"
+            if "aph(3')-III" in gene:
+                gene = "aph(3)-III"
+            if "aph(4)-I" in gene and "aph(4)-II" not in gene and "aph(4)-III" not in gene:
+                gene = "aph(4)-I"
+            if "aph(4)-II" in gene and "aph(4)-III" not in gene:
+                gene = "aph(4)-II"
+            if "aph(4)-III" in gene:
+                gene = "aph(4)-III"
+            if "aph(6)-I" in gene and "aph(6)-II" not in gene and "aph(6)-III" not in gene:
+                gene = "aph(6)-I"
+            if "aph(6)-II" in gene and "aph(6)-III" not in gene:
+                gene = "aph(6)-II"
+            if "aph(6)-III" in gene:
+                gene = "aph(6)-III"
+            if "qacE" in gene:
+                gene = "qacE"
+            if "blaLAP" in gene:
+                gene = "blaLAP"
+            if "aac(6')-I" in gene and "aac(6')-II" not in gene and "aac(6')-III" not in gene:
+                gene = "aac(6')-I"
+            if "aac(6')-II" in gene and "aac(6')-III" not in gene:
+                gene = "aac(6')-II"
+            if "aac(6')-III" in gene:
+                gene = "aac(6')-III"
+            if "blaDHA" in gene:
+                gene = "blaDHA"
+            if "qepA" in gene:
+                gene = "qepA"
+            if "blaIMI" in gene:
+                gene = "blaIMI"
+            return gene
+
+        def process_AMRFP_results(file_list):
+            merged_results = {}
+            for f in file_list:
+                sample = os.path.basename(os.path.dirname(f))
+                merged_results[sample] = {}
+                results = pd.read_csv(f, sep="\t")
+                for index, row in results.iterrows():
+                    gene = row["Gene symbol"]
+                    if row["Element subtype"] == "POINT":
+                        continue
+                    gene = apply_rules(gene)
+                    if gene not in merged_results[sample]:
+                        merged_results[sample][gene] = 0
+                    merged_results[sample][gene] += 1
+            return merged_results[sample]
+
+        def calculate_gene_recall(truth, amira):
+            tp = min(truth, amira)
+            fn = max(0, truth - amira)
+            recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+            if truth != 0:
+                return recall
+            else:
+                return None
+
+        def calculate_gene_precision(truth, amira):
+            tp = min(truth, amira)
+            fp = max(0, amira-truth)
+            precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+            if amira != 0:
+                return precision
+            else:
+                return None
+
+        # make the output dir
+        for d in [os.path.dirname(output[0]), output[0]]:
+            if not os.path.exists(d):
+                os.mkdir(d)
+        # import the truth tsv
+        truth_df = pd.read_csv(input.truth_content.replace(".fasta", ".AMR_genes.tsv"), sep="\t")
+        # convert the truth results to a JSON
+        truth_counts = {}
+        for index, row in truth_df.iterrows():
+            gene_name = apply_rules(row["Allele name"].split(";")[1].split(".")[0])
+            if gene_name not in truth_counts:
+                truth_counts[gene_name] = 0
+            truth_counts[gene_name] += 1
+        # iterate through the different depths for this sample
+        x_vals = [5, 10, 20, 40]#, 80]#, 160]#, 320]
+        recalls_amira = []
+        precisions_amira = []
+        recalls_amrfp = []
+        precisions_amrfp = []
+        amira_outputs = [input.amira_5, input.amira_10, input.amira_20, input.amira_40]#, input.amira_80]#, input.amira_160]:#, input.amira_320]:
+        #amrfp_flye_outputs = [input.flye_10, input.flye_20, input.flye_40, input.flye_80]
+        amrfp_outputs = [input.unicycler_5, input.unicycler_10, input.unicycler_20, input.unicycler_40]#, input.unicycler_80]
+        for a in range(len(amira_outputs)):
+            amira_out = amira_outputs[a]
+            amrfp_output = amrfp_outputs[a]
+            # import the amira result
+            amira_df = pd.read_csv(os.path.join(amira_out, "amira_results.tsv"), sep="\t")
+            # convert the amira results to a JSON
+            amira_counts = {}
+            for index, row in amira_df.iterrows():
+                gene_name = apply_rules(row["Gene name"])
+                if gene_name not in amira_counts:
+                    amira_counts[gene_name] = 0
+                amira_counts[gene_name] += 1
+            # Load the amrfp output
+            amrfp_count = process_AMRFP_results([amrfp_output])
+            # Initialize lists to store recalls and precisions for each method
+            gene_recalls_amira = []
+            gene_precisions_amira = []
+            gene_recalls_amrfp = []
+            gene_precisions_amrfp = []
+            # Calculate the per-gene recall and precision for both AMIRA and AMRFP
+            for g in set(list(amira_counts.keys()) + list(truth_counts.keys())):
+                # Calculate recall and precision for AMIRA
+                r_amira = calculate_gene_recall(truth_counts.get(g, 0), amira_counts.get(g, 0))
+                if r_amira is not None:
+                    gene_recalls_amira.append(r_amira)
+                p_amira = calculate_gene_precision(truth_counts.get(g, 0), amira_counts.get(g, 0))
+                if p_amira is not None:
+                    gene_precisions_amira.append(p_amira)
+
+                # Calculate recall and precision for AMRFP
+                r_amrfp = calculate_gene_recall(truth_counts.get(g, 0), amrfp_count.get(g, 0))
+                if r_amrfp is not None:
+                    gene_recalls_amrfp.append(r_amrfp)
+                p_amrfp = calculate_gene_precision(truth_counts.get(g, 0), amrfp_count.get(g, 0))
+                if p_amrfp is not None:
+                    gene_precisions_amrfp.append(p_amrfp)
+            # Calculate mean recall and precision for each method
+            try:
+                recalls_amira.append(statistics.mean(gene_recalls_amira))
+            except:
+                recalls_amira.append(1)
+            try:
+                precisions_amira.append(statistics.mean(gene_precisions_amira))
+            except:
+                precisions_amira.append(1)
+            try:
+                recalls_amrfp.append(statistics.mean(gene_recalls_amrfp))
+            except:
+                recalls_amrfp.append(1)
+            try:
+                precisions_amrfp.append(statistics.mean(gene_precisions_amrfp))
+            except:
+                precisions_amrfp.append(1)
+        # Plotting the precision and recall
+        plt.figure(figsize=(10, 6))
+        plt.plot(x_vals, recalls_amira, marker='o', label='AMIRA Recall')
+        plt.plot(x_vals, precisions_amira, marker='o', label='AMIRA Precision')
+        plt.plot(x_vals, recalls_amrfp, marker='o', linestyle='--', label='AMRFP Recall')
+        plt.plot(x_vals, precisions_amrfp, marker='o', linestyle='--', label='AMRFP Precision')
+        plt.xlabel('Read depth')
+        plt.ylabel('Value')
+        plt.title('Precision and Recall vs Depth')
+        plt.ylim([0, 1.0])
+        plt.xlim([0, 80])
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(os.path.join(output[0], "accuracy_by_depth.png"), dpi=600)
+        plt.close()
