@@ -50,7 +50,7 @@ rule simulate_assembly:
         allele_file=AMR_allele_file
     conda: "envs/simulate_assembly.yaml"
     shell:
-        "python3 /home/dander/Documents/GitHub/amira_paper/simulation_evaluation/scripts/simulate_assemblies.py"
+        "python3 /home/dander/Documents/GitHub/amira_paper/simulation_evaluation/scripts/simulate_assemblies.py --context-fasta {input.context_fasta} --allele-file {params.allele_file} --output {output}"
 
 rule simulate_r_10_reads:
     input:

@@ -2,6 +2,13 @@ import subprocess
 import argparse
 from Bio import SeqIO
 
+parser = argparse.ArgumentParser()
+parser.add_argument()
+parser.add_argument("--context-fasta", required=True)
+parser.add_argument("--allele-file", required=True)
+parser.add_argument("--output", required=True)
+args = parser.parse_args()
+
 # Load the reference assembly
 genome = pyfastaq.sequences.file_reader(args.reference_genome)
 # Get the genome length and sequence
@@ -39,7 +46,7 @@ try:
 except:
     pass
 # Load the context file
-context = pyfastaq.sequences.file_reader(args..context_fasta)
+context = pyfastaq.sequences.file_reader(args.context_fasta)
 # Decide where we are putting the AMR blocks
 block_insertions = [[], []]
 for sequence in context:
