@@ -1,11 +1,16 @@
 import subprocess
 import argparse
 from Bio import SeqIO
+import pyfastaq
+import random
+import pathlib
+import pandas as pd
 
 parser = argparse.ArgumentParser()
-parser.add_argument()
 parser.add_argument("--context-fasta", dest="context_fasta", required=True)
 parser.add_argument("--allele-file", dest="allele_file", required=True)
+parser.add_argument("--reference-genome", dest="reference_genome", required=True)
+parser.add_argument("--reference-plasmid", dest="reference_plasmid", required=True)
 parser.add_argument("--output", dest="output", required=True)
 args = parser.parse_args()
 
@@ -26,25 +31,22 @@ for sequence in plasmid:
     plasmid_seq = str(sequence.seq)
 
 # get the true amr gene content of the block
-try:
-    out_gff = args.output.replace('.fasta', '.AMR_content.gff')
-    subprocess.run(f"python3 scripts/make_truth_with_minimap.py {args.context_fasta} {args.allele_file} {out_gff}")
-    # process the gff file
-    gff_content = {}
-    with open(out_gff) as i:
-        annotations, sequence = i.read().split("##FASTA")
-    for line in annotations.split("\n"):
-        if not line.startswith("#"):
-            if line == "":
-                continue
-            region, source, a_type, start, end, _, strand, dot, feature = line.split("\t")
-            if region not in gff_content:
-                gff_content[region] = []
-            gff_content[region].append((int(start) - 1, int(end) - int(start), feature.replace("Name=", ""), strand))
-    for r in gff_content:
-        gff_content[r] = sorted(gff_content[r], key=lambda x: x[0])
-except:
-    pass
+out_gff = args.output.replace('.fasta', '.AMR_content.gff')
+subprocess.run(f"python3 {pathlib.Path(__file__).parent.resolve()}/make_truth_with_minimap.py {args.context_fasta} {args.allele_file} {out_gff}", shell=True, check=True)
+# process the gff file
+gff_content = {}
+with open(out_gff) as i:
+    annotations, sequence = i.read().split("##FASTA")
+for line in annotations.split("\n"):
+    if not line.startswith("#"):
+        if line == "":
+            continue
+        region, source, a_type, start, end, _, strand, dot, feature = line.split("\t")
+        if region not in gff_content:
+            gff_content[region] = []
+        gff_content[region].append((int(start) - 1, int(end) - int(start), feature.replace("Name=", ""), strand))
+for r in gff_content:
+    gff_content[r] = sorted(gff_content[r], key=lambda x: x[0])
 # Load the context file
 context = pyfastaq.sequences.file_reader(args.context_fasta)
 # Decide where we are putting the AMR blocks
