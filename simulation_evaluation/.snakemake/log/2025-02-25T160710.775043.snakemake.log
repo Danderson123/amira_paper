@@ -1,3 +1,0 @@
-RuleException in file /home/dander/Documents/GitHub/amira_paper/simulation_evaluation/Snakefile_40kb, line 60:
-Conda environments are only allowed with shell, script, notebook, or wrapper directives (not with run or template_engine).
-  File "/home/dander/Documents/GitHub/amira_paper/simulation_evaluation/Snakefile_40kb", line 60, in <module>

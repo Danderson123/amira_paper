@@ -24,7 +24,7 @@ snakemake --snakefile Snakefile_5kb --cores 12 --use-conda --nolock --rerun-inco
 
 # Generating results
 
-The final plots can be generated with this command:
+The final plots can be generated with this command after running the simulations for all read lengths:
 ```{bash}
 python3 scripts/make_sim_results.py
 ```
