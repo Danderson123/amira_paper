@@ -56,7 +56,7 @@ rule simulate_r_10_reads:
     input:
         assembly=os.path.join("simulated_assemblies", "{sample}.fasta")
     output:
-        os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq")
+        os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq.gz")
     resources:
         mem_mb=30000, threads=1
     threads: 1
@@ -69,7 +69,7 @@ rule simulate_r_10_reads:
 
 rule run_amira:
     input:
-        readfile=os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq")
+        readfile=os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq.gz")
     output:
         directory(os.path.join(output_dir, "amira" + "_{depth}", "{sample}"))
     threads: 5
@@ -83,7 +83,7 @@ rule run_amira:
 
 rule flye_assemble:
     input:
-        readfile=os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq")
+        readfile=os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq.gz")
     output:
         directory(os.path.join(output_dir, "flye" + "_{depth}", "{sample}"))
     threads: 4
