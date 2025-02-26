@@ -52,7 +52,7 @@ rule simulate_assembly:
         allele_file=AMR_allele_file
     conda: "envs/simulate_assembly.yaml"
     shell:
-        "python3 /home/dander/Documents/GitHub/amira_paper/simulation_evaluation/scripts/simulate_assemblies.py --context-fasta {input.context_fasta} --allele-file {params.allele_file} --output {output}"
+        "python3 scripts/simulate_assemblies.py --context-fasta {input.context_fasta} --reference-genome {input.reference_genome} --reference-plasmid {input.reference_plasmid} --allele-file {params.allele_file} --output {output}"
 
 rule simulate_r_10_reads:
     input:
@@ -65,7 +65,7 @@ rule simulate_r_10_reads:
     params:
         sim_depth="{depth}",
         mean_length=badread_length
-    conda: "envs/badread.yaml"    
+    conda: "envs/badread.yaml"
     shell:
         "badread simulate --seed 2024 --length {params.mean_length} --error_model nanopore2023 --qscore_model nanopore2023 --reference {input.assembly} --quantity {params.sim_depth}x > {output}"
 
@@ -78,10 +78,10 @@ rule run_amira:
     resources:
         mem_mb=lambda wildcards, attempt: 50000 * attempt, threads=5, runtime=7200
     params:
-        panRG="AMR_supplemented_panRG.k15.w5.panidx.zip",
+        panRG="Escherichia.coli.panidx.zip",
         species="Escherichia_coli"
     shell:
-        "singularity run amira.img amira --pandora-path /hps/nobackup/iqbal/dander/Amira_truth_evaluation/software/pandora-linux-precompiled-v0.12.0-alpha.0 --reads {input.readfile} --output {output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira.img amira --reads {input.readfile} --output {output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule flye_assemble:
     input:

@@ -5,12 +5,13 @@ Simulations of *E. coli*, using the *Escherichia coli str. K-12 substr. MG1655* 
 
 # Installation
 
-Amira can be installed from [here](https://github.com/Danderson123/amira).
-All other dependencies can be installed via conda with:
+Amira can be installed from [here](https://github.com/Danderson123/amira). You also need to have conda and singularity installed. All other dependencies can be installed via conda with:
 
 ```{bash}
 conda env create -f envs/sims_env.yaml && conda activate simulation_env
 ```
+
+The panRG can be downloaded from [here](https://drive.google.com/file/d/13c_bUXnBEs9iEPPobou7-xEgkz_t08YP/view?usp=sharing).
 
 # Running the simulations
 

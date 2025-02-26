@@ -5,3 +5,7 @@ dependencies:
   - biopython=1.79
   - minimap2=2.28
   - samtools=1.20
+  - pandas=2.2.2
+  - pip:
+    - pysam==0.22.1
+    - pyfastaq==3.17.0
