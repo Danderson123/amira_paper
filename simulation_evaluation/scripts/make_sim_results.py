@@ -394,6 +394,8 @@ def process_AMRFP_results(f, reference_genes):
         gene = row["Gene symbol"]
         if row["Element subtype"] == "POINT":
             continue
+        if row["Method"] == "PARTIALX" or row["Method"] == "PARTIALP":
+            continue
         gene = apply_rules(gene)
         if gene not in reference_genes:
             continue
