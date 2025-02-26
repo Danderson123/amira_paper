@@ -45,7 +45,7 @@ rule run_amrfp_on_flye:
         os.path.join(output_dir, "flye_v2.9.3_nanopore_only_assemblies", "{nanopore_sample}")
     output:
         outdir=directory(os.path.join(output_dir, "AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", "{nanopore_sample}")),
-        outfile=os.path.join(output_dir, "AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", "{nanopore_sample}", "AMR_finder_plus_results.gff")
+        outfile=os.path.join(output_dir, "AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", "{nanopore_sample}", "AMR_finder_plus_results.tsv")
     threads: 4
     resources:
         mem_mb=15000
