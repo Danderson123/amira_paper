@@ -19,3 +19,4 @@ dependencies:
  - pip:
     - pysam==0.22.1
     - pyfastaq==3.17.0
+    - "git+https://github.com/rrwick/Badread.git@f38ef6fe09294e8b604bd978ad01e5487e5fa672"

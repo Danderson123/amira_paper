@@ -58,20 +58,19 @@ rule simulate_r_10_reads:
     input:
         assembly=os.path.join("simulated_assemblies", "{sample}.fasta")
     output:
-        os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq.gz")
+        os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq")
     resources:
         mem_mb=30000, threads=1
     threads: 1
     params:
         sim_depth="{depth}",
         mean_length=badread_length
-    conda: "envs/badread.yaml"
     shell:
         "badread simulate --seed 2024 --length {params.mean_length} --error_model nanopore2023 --qscore_model nanopore2023 --reference {input.assembly} --quantity {params.sim_depth}x > {output}"
 
 rule run_amira:
     input:
-        readfile=os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq.gz")
+        readfile=os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq")
     output:
         directory(os.path.join(output_dir, "amira" + "_{depth}", "{sample}"))
     threads: 5
@@ -85,7 +84,7 @@ rule run_amira:
 
 rule flye_assemble:
     input:
-        readfile=os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq.gz")
+        readfile=os.path.join(output_dir, "reads" + "_{depth}", "{sample}_1.fastq")
     output:
         directory(os.path.join(output_dir, "flye" + "_{depth}", "{sample}"))
     threads: 4
@@ -105,4 +104,4 @@ rule run_amrfp_on_flye:
     resources:
         mem_mb=15000
     shell:
-        "mkdir -p {output.outdir} && amrfinder -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
+        "mkdir -p {output.outdir} && amrfinder -d /homes/dander/software/bin/data/2024-01-31.1 -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
