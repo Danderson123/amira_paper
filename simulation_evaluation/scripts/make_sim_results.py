@@ -1,289 +1,123 @@
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import seaborn as sns
+import subprocess
+import argparse
+from Bio import SeqIO
+import pyfastaq
+import random
+import pathlib
 import pandas as pd
-import numpy as np
-from matplotlib.patches import FancyArrow
-import json
-import matplotlib.colors as mc
-import matplotlib.image as image
-import matplotlib.pyplot as plt
+import os
 
-from matplotlib.cm import ScalarMappable
-from matplotlib.lines import Line2D
-from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from palettable import cartocolors
+parser = argparse.ArgumentParser()
+parser.add_argument("--context-fasta", dest="context_fasta", required=True)
+parser.add_argument("--allele-file", dest="allele_file", required=True)
+parser.add_argument("--reference-genome", dest="reference_genome", required=True)
+parser.add_argument("--reference-plasmid", dest="reference_plasmid", required=True)
+parser.add_argument("--output", dest="output", required=True)
+args = parser.parse_args()
 
+# Load the reference assembly
+genome = pyfastaq.sequences.file_reader(args.reference_genome)
+# Get the genome length and sequence
+genome_length, genome_seq = 0, ""
+for sequence in genome:
+    genome_length = len(sequence.seq)
+    genome_seq = str(sequence.seq)
 
-# Define constants and shared settings
-plt.rcParams.update({'font.family': 'sans-serif', 'font.size': 30})
+# Load the reference plasmid
+plasmid = pyfastaq.sequences.file_reader(args.reference_plasmid)
+# Get the plasmid length and sequence
+plasmid_length, plasmid_seq = 0, ""
+for sequence in plasmid:
+    plasmid_length = len(sequence.seq)
+    plasmid_seq = str(sequence.seq)
 
-# Function to generate colorblind-safe colors
-def generate_colorblind_safe_colors(n):
-    colors = sns.color_palette("colorblind", n_colors=n)
-    return colors
-
-# Plot gene positions
-def plot_gene_positions(ax, genes_dict, positions_dict, gene_colors, scenario, global_max_pos):
-    ax.set_xlim(-500, global_max_pos)
-    ax.set_ylim(0, len(genes_dict) + 1)
-    read_num = 1
-    fixed_head_width = 8
-    fixed_tail_width = 5
-    # Convert fixed arrow widths to data coordinates
-    inv = ax.transData.inverted()
-    fig_height_in_data_coords = inv.transform((0, fixed_head_width))[1] - inv.transform((0, 0))[1]
-    for seq_id, gene_list in genes_dict.items():
-        pos_list = positions_dict[seq_id]
-        first_gene_start, last_gene_end = pos_list[0][0], pos_list[-1][1]
-        ax.hlines(y=read_num, xmin=first_gene_start, xmax=last_gene_end, colors='black', linewidth=2, alpha=0.8)
-        for gene, (start, end) in zip(gene_list, pos_list):
-            gene_name = gene[1:]
-            facecolor = gene_colors.get(gene_name, "gray")
-            strand = gene[0]
-            arrow_length = end - start
-            head_length = min(600, arrow_length * 0.8)  # Adjust head length relative to arrow size
-            # Adjust the arrow based on the strand (+ or -)
-            if strand == '+':
-                if arrow_length >= 600:
-                    # Forward strand: arrow starts at 'start' and points to 'end'
-                    ax.add_patch(FancyArrow(
-                        start, read_num, arrow_length, 0,
-                        width=fig_height_in_data_coords * fixed_tail_width, 
-                        head_width=fig_height_in_data_coords * fixed_head_width, 
-                        head_length=head_length,
-                        length_includes_head=True, facecolor=facecolor, edgecolor='black', linewidth=2, zorder=2
-                    ))
-                else:
-                    ax.add_patch(FancyArrow(
-                        start, read_num, arrow_length, 0,
-                        width=fig_height_in_data_coords * fixed_tail_width, 
-                        head_width=fig_height_in_data_coords * fixed_head_width, 
-                        head_length=head_length,
-                        length_includes_head=True, facecolor=facecolor, edgecolor='black', linewidth=2, zorder=2
-                    ))
-            else:
-                if arrow_length >= 600:
-                    # Reverse strand: arrow starts at 'end' and points to 'start'
-                    ax.add_patch(FancyArrow(
-                        end, read_num, -arrow_length, 0,
-                        width=fig_height_in_data_coords * fixed_tail_width, 
-                        head_width=fig_height_in_data_coords * fixed_head_width, 
-                        head_length=head_length,
-                        length_includes_head=True, facecolor=facecolor, edgecolor='black', linewidth=2, zorder=2
-                    ))
-                else:
-                    ax.add_patch(FancyArrow(
-                        end, read_num, -arrow_length, 0,
-                        width=fig_height_in_data_coords * fixed_tail_width, 
-                        head_width=fig_height_in_data_coords * fixed_head_width, 
-                        head_length=head_length,
-                        length_includes_head=True, facecolor=facecolor, edgecolor='black', linewidth=2, zorder=2
-                    ))
-        read_num += 1
-    # Set custom y-tick labels for the specific scenario, if available
-    custom_y_labels = {
-        "1": [" "],
-        "2": ["chromosome"],
-        "3": ["plasmid", "chromosome"],
-        "4": ["chromosome"],
-        "5": ["plasmid", "chromosome"],
-        "6": ["plasmid", "chromosome", "chromosome"]
-    }
-    if scenario in custom_y_labels:
-        ax.set_yticks(range(1, len(custom_y_labels[scenario]) + 1))
-        ax.set_yticklabels(custom_y_labels[scenario])
-        if scenario != "6":
-            ax.set_xticklabels("")
-
-# Plot AMR gene recall
-def plot_amr_recall(ax, depths, recalls, lengths, scenario):
-    line_styles = ['-', '--', '-.', ':']
-    marker_styles = ['o', 's', '^', 'D']
-    for j, l in enumerate(lengths):
-        recall_data = [recalls[str(d)][j] for d in depths]
-        ax.plot(depths, recall_data, line_styles[j], marker=marker_styles[j], markersize=14, label=f"{l}kb")
-    ax.set_ylim(0, 1.05)
-    if scenario != "6":
-        ax.set_xticklabels("")
-    ax.grid(axis='y', linestyle='-', alpha=0.3, linewidth=1)
-
-# Main combined plot function
-def plot_combined(genes_data, recall_data, output_file):
-    depths = [5, 10, 20, 40, 80]
-    lengths = [5, 10, 20, 40]
-    scenarios = list(genes_data.keys())
-    fig = plt.figure(figsize=(30, 45))
-    grid = gridspec.GridSpec(5, 2, hspace=0.1, wspace=0.2, width_ratios=[1.5, 1])
-    global_max_end = 0
-    for s in genes_data:
-        _, positions_dict, _ = genes_data[s]
-        if len(positions_dict) != 0:
-            for contig in positions_dict:
-                max_end = max([end for start, end in positions_dict[contig]])
-                if max_end > global_max_end:
-                    global_max_end = max_end
-    for i, scenario in enumerate(scenarios):
-        if scenario == "1":
+# get the true amr gene content of the block
+out_gff = args.output.replace('.fasta', '.AMR_content.gff')
+subprocess.run(f"python3 {pathlib.Path(__file__).parent.resolve()}/make_truth_with_minimap.py {args.context_fasta} {args.allele_file} {out_gff}", shell=True, check=True)
+# process the gff file
+gff_content = {}
+with open(out_gff) as i:
+    annotations, sequence = i.read().split("##FASTA")
+for line in annotations.split("\n"):
+    if not line.startswith("#"):
+        if line == "":
             continue
-        genes_dict, positions_dict, gene_colors = genes_data[scenario]
-        recalls = recall_data[scenario]
-        # Context plot (left column)
-        ax1 = fig.add_subplot(grid[i-1, 0])
-        plot_gene_positions(ax1, genes_dict, positions_dict, gene_colors, scenario, global_max_end)
-        if scenario == "6":
-            ax1.set_xlabel("Nucleotide position (bp)")
-        # AMR recall plot (right column)
-        ax2 = fig.add_subplot(grid[i-1, 1])
-        plot_amr_recall(ax2, depths, recalls, lengths, scenario)
-        if scenario == "4":
-            ax2.set_ylabel("AMR gene recall")
-        if scenario == "6":
-            ax2.set_xlabel("Read depth (x)")
-    # Create a single unified legend for the entire figure
-    line_styles = ['-', '--', '-.', ':']
-    marker_styles = ['o', 's', '^', 'D']
-    legend_colors = generate_colorblind_safe_colors(len(lengths))  # Use the colorblind-safe palette
-
-    legend_elements = [
-        plt.Line2D(
-            [0], [0],
-            linestyle=line_styles[i],
-            marker=marker_styles[i],
-            color=legend_colors[i],  # Use colors from the palette
-            markersize=10,
-            label=f"{lengths[i]}kb"
-        )
-        for i in range(len(lengths))
-    ]
-
-    fig.legend(
-        handles=legend_elements, 
-        loc='center right', 
-        bbox_to_anchor=(1.02, 0.5), 
-        fontsize=30,
-        title="Read Lengths"
-    )
-    plt.savefig(output_file, dpi=600, bbox_inches='tight')
-    plt.savefig(output_file.replace(".png", ".pdf"), bbox_inches='tight')
-
-def adjust_lightness(color, amount=0.5):
-    import matplotlib.colors as mc
-    import colorsys
-    try:
-        c = mc.cnames[color]
-    except:
-        c = color
-    c = colorsys.rgb_to_hls(*mc.to_rgb(c))
-    return colorsys.hls_to_rgb(c[0], max(0, min(1, amount * c[1])), c[2])
-
-def plot_combined_new(genes_data, amira_recall_data, flye_recall_data, output_file):
-    depths = [5, 10, 20, 40, 80]
-    lengths = [5, 10, 20, 40]
-    scenarios = list(genes_data.keys())
-    fig = plt.figure(figsize=(30, 45))
-    grid = gridspec.GridSpec(5, 2, hspace=0.1, wspace=0.2, width_ratios=[1, 1])
-    global_max_end = 0
-    for s in genes_data:
-        _, positions_dict, _ = genes_data[s]
-        if len(positions_dict) != 0:
-            for contig in positions_dict:
-                max_end = max([end for start, end in positions_dict[contig]])
-                if max_end > global_max_end:
-                    global_max_end = max_end
-    # Function used to normalize values into 0-1 scale.
-    palette = sns.color_palette("colorblind", n_colors=len(depths))
-    depth_color_map = {depths[d]: palette[d] for d in range(len(depths))}
-    for i, scenario in enumerate(scenarios):
-        if scenario == "1":
-            continue
-        genes_dict, positions_dict, gene_colors = genes_data[scenario]
-        recalls_amira = amira_recall_data[scenario]
-        recalls_flye = flye_recall_data[scenario]
-        # Context plot (left column)
-        ax1 = fig.add_subplot(grid[i-1, 0])
-        plot_gene_positions(ax1, genes_dict, positions_dict, gene_colors, scenario, global_max_end)
-        if scenario == "6":
-            ax1.set_xlabel("Nucleotide position (bp)")
-
-        # Lollipop plot for recall differences (right column)
-        ax2 = fig.add_subplot(grid[i-1, 1])
-        plot_dict = {"Lengths": [], "Depths": [], "Amira": [], "Flye": [], "x": [], "color": []}
-        for depth in recalls_amira:
-            print(scenario, depth, recalls_amira[depth])
-            for i in range(len(recalls_amira[depth])):
-                plot_dict["Lengths"].append(int(lengths[i]))
-                plot_dict["Depths"].append(int(depth))
-                plot_dict["Amira"].append(recalls_amira[depth][i])
-                try:
-                    plot_dict["Flye"].append(recalls_flye[depth][i])
-                except:
-                    print(lengths[i], depth)
-                    plot_dict["Flye"].append(0)
-                plot_dict["x"].append((depths.index(int(depth)) + 1)*25 + 200*(i+1))
-                plot_dict["color"].append(depth_color_map[int(depth)])
-        plot_df = pd.DataFrame(plot_dict)
-        ax2.vlines(
-            x="x",
-            ymin="Amira",
-            ymax="Flye",
-            data = plot_df,
-            color=list(plot_df["color"])
-        )
-        ax2.scatter(
-            "x",
-            "Amira",
-            data=plot_df,
-            color=list(plot_df["color"]),
-            zorder=3,
-            s=200,
-            marker="o"
-        )
-        ax2.scatter(
-            "x",
-            "Flye",
-            data=plot_df,
-            color=list(plot_df["color"]),
-            zorder=3,
-            s=200,
-            marker="x"
-        )
-
-        ax2.set_ylim([-0.05, 1.05])
-        xticks_positions = [275, 475, 675, 875]
-        custom_labels = [5000, 10000, 20000, 40000]
-        if scenario == "6":
-            ax2.set_xlabel("Mean read length (bp)")
-            ax2.set_xticks(xticks_positions)
-            ax2.set_xticklabels(custom_labels)  # Custom labels when scenario == "6"
-        else:
-            ax2.set_xticks(xticks_positions)
-            ax2.set_xticklabels([])
-        if scenario == "4":
-            ax2.set_ylabel("AMR gene recall")
-        # Adjust aesthetics for plots
-        ax1.spines['left'].set_visible(False)
-        ax1.spines['right'].set_visible(False)
-        ax1.spines['top'].set_visible(False)
-        ax1.spines['bottom'].set_linewidth(True)
-        ax1.grid(axis="y", visible=False)
-        ax1.grid(axis="x", linestyle="--", alpha=0.7, zorder=1)
-        ax2.grid(axis="y", linestyle="--", alpha=0.7, zorder=1)
-        ax2.grid(axis="x", visible=False)
-        ax2.spines['left'].set_visible(True)
-        ax2.spines['right'].set_visible(False)
-        ax2.spines['top'].set_visible(False)
-        ax2.spines['bottom'].set_linewidth(True)
-
-    # Save plots
-    plt.savefig(output_file, dpi=600, bbox_inches='tight')
-    plt.savefig(output_file.replace(".png", ".pdf"), bbox_inches='tight')
-
-with open("aggregated_sim_results/context_plot_inputs.json") as i:
-    genes_data = json.load(i)
-with open("aggregated_sim_results/recall_plot_inputs.json") as i:
-    amira_recall_data = json.load(i)
-with open("aggregated_sim_results/flye_recall_plot_inputs.json") as i:
-    flye_recall_data = json.load(i)
-plot_combined_new(genes_data, amira_recall_data, flye_recall_data, 'aggregated_sim_results/final_combined_plot.png')
+        region, source, a_type, start, end, _, strand, dot, feature = line.split("\t")
+        if region not in gff_content:
+            gff_content[region] = []
+        gff_content[region].append((int(start) - 1, int(end) - int(start), feature.replace("Name=", ""), strand))
+for r in gff_content:
+    gff_content[r] = sorted(gff_content[r], key=lambda x: x[0])
+# Load the context file
+context = pyfastaq.sequences.file_reader(args.context_fasta)
+# Decide where we are putting the AMR blocks
+block_insertions = [[], []]
+for sequence in context:
+    if "_chromosome" in sequence.id:
+        block_insertions[0].append((sequence.id, str(sequence.seq)))
+    elif "_plasmid" in sequence.id:
+        block_insertions[1].append((sequence.id, str(sequence.seq)))
+# decide where the blocks will be inserted in the chromosome
+chromosome_insertions = sorted(random.sample(range(len(genome_seq)), len(block_insertions[0])))
+# decide where the blocks will be inserted in the plasmid
+plasmid_insertions = sorted(random.sample(range(len(plasmid_seq)), len(block_insertions[1])))
+# decide the plasmid copy number
+plasmid_copy_number = random.randint(1, 10)
+# split the chromosome into blocks at the insertion points
+chromosome_fragments = []
+next_start = 0
+for position in chromosome_insertions:
+    chromosome_fragments.append(genome_seq[next_start:position])
+    next_start = position
+chromosome_fragments.append(genome_seq[next_start:])
+# split the plasmid into blocks at the insertion points
+plasmid_fragments = []
+next_start = 0
+for position in plasmid_insertions:
+    plasmid_fragments.append(plasmid_seq[next_start:position])
+    next_start = position
+plasmid_fragments.append(plasmid_seq[next_start:])
+# collect amr gene positions
+context_tsv = ["Allele name\tContig\tStart\tEnd\tLength\tStrand\tCopy number"]
+# get the chromsome assembly
+simulated_chromosome = []
+offset = 0
+for i in range(len(chromosome_insertions)):
+    simulated_chromosome.append(chromosome_fragments[i])
+    simulated_chromosome.append(block_insertions[0][i][1])
+    adjusted_start = offset + chromosome_insertions[i] + 1
+    if block_insertions[0][i][0] in gff_content:
+        for amr_start, amr_length, amr_allele, amr_strand in gff_content[block_insertions[0][i][0]]:
+            context_tsv.append(f"{amr_allele}\tchromosome\t{adjusted_start + amr_start}\t{adjusted_start + amr_start + amr_length}\t{amr_length}\t{amr_strand}\t1")
+    offset += len(block_insertions[0][i][1])
+simulated_chromosome.append(chromosome_fragments[-1])
+# get the plasmid assembly
+simulated_plasmid = []
+offset = 0
+for i in range(len(plasmid_insertions)):
+    simulated_plasmid.append(plasmid_fragments[i])
+    simulated_plasmid.append(block_insertions[1][i][1])
+    adjusted_start = offset + plasmid_insertions[i] + 1
+    if block_insertions[1][i][0] in gff_content:
+        for amr_start, amr_length, amr_allele, amr_strand in gff_content[block_insertions[1][i][0]]:
+            context_tsv.append(f"{amr_allele}\tplasmid\t{adjusted_start + amr_start}\t{adjusted_start + amr_start + amr_length}\t{amr_length}\t{amr_strand}\t{plasmid_copy_number}")
+    offset += len(block_insertions[1][i][1])
+simulated_plasmid.append(plasmid_fragments[-1])
+# make the simulated assembly
+simulated_assembly = []
+simulated_chromosome_header = ">contig_1,circular=true"
+simulated_assembly.append(simulated_chromosome_header)
+simulated_assembly.append("".join(simulated_chromosome))
+for i in range(plasmid_copy_number):
+    plasmid_header = f">plasmid_{i + 1},circular=true"
+    simulated_assembly.append(plasmid_header)
+    simulated_assembly.append("".join(simulated_plasmid))
+# Join the simulated assembly into a single string
+simulated_assembly_str = "\n".join(simulated_assembly)
+# write the outputs
+if not os.path.exists(os.path.dirname(args.output)):
+    os.mkdir(os.path.dirname(args.output))
+with open(args.output, "w") as o:
+    o.write(simulated_assembly_str)
+with open(args.output.replace(".fasta", ".AMR_genes.tsv"), "w") as o:
+    o.write("\n".join(context_tsv))
