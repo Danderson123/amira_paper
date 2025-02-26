@@ -4,9 +4,9 @@ from Bio import SeqIO
 
 parser = argparse.ArgumentParser()
 parser.add_argument()
-parser.add_argument("--context-fasta", required=True)
-parser.add_argument("--allele-file", required=True)
-parser.add_argument("--output", required=True)
+parser.add_argument("--context-fasta", dest="context_fasta", required=True)
+parser.add_argument("--allele-file", dest="allele_file", required=True)
+parser.add_argument("--output", dest="output", required=True)
 args = parser.parse_args()
 
 # Load the reference assembly
