@@ -26,5 +26,5 @@ snakemake --snakefile Snakefile_5kb --cores 12 --use-conda --nolock --rerun-inco
 
 The final plots can be generated with this command:
 ```{bash}
-python3 
+python3 scripts/make_sim_results.py
 ```
