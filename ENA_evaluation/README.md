@@ -5,7 +5,7 @@ Pipelines to run Amira, Amira `--no-filtering` and AMRFinderPlus with Flye on a 
 
 # Installation
 
-Amira can be installed from [here](https://github.com/Danderson123/amira). You also need to have conda installed.
+The pipeline assumes the Amira singularity container is available in the directory, which can be installed [here](https://github.com/Danderson123/amira). You also need to have conda installed.
 The dependencies for the *E. coli* evaluation can be installed with:
 ```{bash}
 conda env create -f Escherichia_coli/envs && conda activate E_coli_env
