@@ -78,10 +78,10 @@ rule run_amira:
     resources:
         mem_mb=lambda wildcards, attempt: 50000 * attempt, threads=5, runtime=7200
     params:
-        panRG="AMR_supplemented_panRG.k15.w5.panidx.zip",
+        panRG="Escherichia.coli.panidx.zip",
         species="Escherichia_coli"
     shell:
-        "singularity run amira.img amira --pandora-path /hps/nobackup/iqbal/dander/Amira_truth_evaluation/software/pandora-linux-precompiled-v0.12.0-alpha.0 --reads {input.readfile} --output {output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira.img amira --reads {input.readfile} --output {output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule flye_assemble:
     input:

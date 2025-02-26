@@ -13,6 +13,8 @@ conda env create -f envs/sims_env.yaml && conda activate simulation_env
 
 The panRG can be downloaded from [here](https://drive.google.com/file/d/13c_bUXnBEs9iEPPobou7-xEgkz_t08YP/view?usp=sharing).
 
+You will also need to install the AMRFinderPlus database.
+
 # Running the simulations
 
 There are four Snakefiles in this directory, each corresponding to simulation for different mean read lengths (5kb, 10kb, 20kb and 40kb). For example, to rerun the 5kb simulations run:
