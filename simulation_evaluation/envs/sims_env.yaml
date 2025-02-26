@@ -13,6 +13,9 @@ dependencies:
  - matplotlib=3.9.2
  - mamba
  - ncbi-amrfinderplus=3.12.8
+ - seaborn=0.13.2
+ - palettable=3.3.3
+ - biopython=1.79
  - pip:
     - pysam==0.22.1
     - pyfastaq==3.17.0
