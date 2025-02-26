@@ -8,13 +8,12 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
-import fastcluster
 import sys
 from matplotlib.patches import Patch
 
 sys.setrecursionlimit(50000)
 
-amira_outputs = glob.glob("Amira_v0.6.4_output/*/amira_results.tsv")
+amira_outputs = glob.glob("evaluation_results/Amira_v0.6.4_output/*/amira_results.tsv")
 
 def apply_rules(gene):
     gene = gene.replace("'", "")
@@ -193,8 +192,8 @@ pa_data = {"Method": [], "Gene": [], "Val": []}
 missing_data = {"sample": [], "gene": [], "component": []}
 for a in tqdm(amira_outputs):
     sample = os.path.basename(os.path.dirname(a))
-    amrfinder = os.path.join("AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", sample, "AMR_finder_plus_results.gff")
-    amira_no_filtering = os.path.join("Amira_v0.6.4_output.no_filtering", sample, "amira_results.tsv")
+    amrfinder = os.path.join("evaluation_results/AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", sample, "AMR_finder_plus_results.tsv")
+    amira_no_filtering = os.path.join("evaluation_results/Amira_v0.6.4_output.no_filtering", sample, "amira_results.tsv")
     if not os.path.exists(amrfinder):
         continue
     if not os.path.exists(amira_no_filtering):
@@ -281,9 +280,6 @@ data_df = pd.DataFrame(plot_data).pivot(index="Method", columns="Gene", values="
 sorted_genes = sorted(data_df.columns, key=lambda gene: (-len(total_counts[gene]), gene))
 data_df = data_df[sorted_genes]
 data_df = data_df.loc[:, (data_df != 0).any(axis=0)]
-print(data_df)
-print(samples)
-
 # Create custom colormap
 cmap = mcolors.LinearSegmentedColormap.from_list("custom_cmap", ["#fde725", "#440154"])
 
@@ -304,12 +300,12 @@ for label in cbar.ax.get_yticklabels():
     label.set_fontsize(16)
     label.set_fontname('sans-serif')
 plt.tight_layout()
-plt.savefig("amrfp_amira_population_frequencies.pdf")
-plt.savefig("amrfp_amira_population_frequencies.png", dpi=300)
+plt.savefig("evaluation_results/amrfp_amira_population_frequencies.pdf")
+plt.savefig("evaluation_results/amrfp_amira_population_frequencies.png", dpi=300)
 plt.close()
-data_df.to_csv("heatmap_data.tsv", sep="\t")
+data_df.to_csv("evaluation_results/heatmap_data.tsv", sep="\t")
 missing_df = pd.DataFrame(missing_data)
-missing_df.to_csv("missing_genes.tsv", sep="\t", index=False)
+missing_df.to_csv("evaluation_results/missing_genes.tsv", sep="\t", index=False)
 
 # -------------------------------
 # Create grouped bar plot for recall
@@ -404,8 +400,8 @@ plt.ylabel("Recall", fontsize=16, fontname='sans-serif')
 plt.yticks(fontsize=16, fontname='sans-serif')
 plt.tight_layout()
 # Save the scatter plot
-plt.savefig("amrfp_amira_scatterplot.pdf")
-plt.savefig("amrfp_amira_scatterplot.png", dpi=300)
+plt.savefig("evaluation_results/amrfp_amira_scatterplot.pdf")
+plt.savefig("evaluation_results/amrfp_amira_scatterplot.png", dpi=300)
 plt.close()
 
 print("Mean recall for each method:")

@@ -1,6 +1,7 @@
 
 # Overview
 
+Pipelines to run Amira, Amira `--no-filtering` and AMRFinderPlus with Flye on a large number of *E. coli* and *K. pneumoniae* reads in the ENA. 
 
 # Installation
 
@@ -20,22 +21,22 @@ You will also need to install the AMRFinderPlus database.
 
 # Running the *E. coli* evaluation
 
-The *E. coli* reads can be downloaded with:
+The *E. coli* evaluation can be run with:
 ```{bash}
-cd Escherichia_coli && python3 scripts/download_reads.py
+cd Escherichia_coli && snakemake --cores 12 --use-conda --nolock --rerun-incomplete --keep-going
 ```
-The *E. coli* evaluation can then be run with:
+Some samples will fail to assemble so the result plots have to be generated separately with:
 ```{bash}
-snakemake --cores 12 --use-conda --nolock --rerun-incomplete --keep-going
+python3 scripts/make_result_plots.py
 ```
 
 # Running the *K. pneumoniae* evaluation
 
-The *K. pneumoniae* reads can be downloaded with:
+The *K. pneumoniae* evaluation can be run with:
 ```{bash}
-cd Klebsiella_pneumoniae && python3 scripts/download_reads.py
+cd Klebsiella_pneumoniae && snakemake --cores 12 --use-conda --nolock --rerun-incomplete --keep-going
 ```
-The *K. pneumoniae* evaluation can then be run with:
+Some samples will fail to assemble so the result plots have to be generated separately with:
 ```{bash}
-nakemake --cores 12 --use-conda --nolock --rerun-incomplete --keep-going
+python3 scripts/make_result_plots.py
 ```
