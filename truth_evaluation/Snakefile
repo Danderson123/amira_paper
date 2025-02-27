@@ -2,8 +2,8 @@ import glob
 import os
 
 # specify the output directories
-amira_output = f"amira_output"
-amira_output_no_trim = f"amira_output_no_trim"
+amira_output = "amira_output"
+amira_output_no_trim = "amira_output_no_trim"
 truth_gff_output = "truth_jsons"
 stats_output = "summary_stats"
 # make the directories
