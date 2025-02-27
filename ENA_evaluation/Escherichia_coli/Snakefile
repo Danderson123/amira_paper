@@ -29,7 +29,8 @@ rule all:
     input:
         aggregate_amira,
         aggregate_amira_no_filtering,
-        aggregate_flye_nanopore
+        aggregate_flye_nanopore,
+        aggregate_truth
 
 rule flye_assemble:
     input:
@@ -89,5 +90,6 @@ rule get_true_gene_content:
         sample_output=directory(os.path.join(output_dir, "true_gene_content", "{nanopore_sample}"))
     threads: 4
     resources: mem_mb=30000, threads=4
+    conda: "envs/make_truth.yaml"
     shell:
         "mkdir -p {output.sample_output} && python3 scripts/get_true_AMR_genes.py --reads {input.reads} --reference {input.AMR_reference} --output {output.sample_output}"
