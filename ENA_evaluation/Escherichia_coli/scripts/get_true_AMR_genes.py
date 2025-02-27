@@ -7,57 +7,42 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--reads", dest="reads", required=True)
 parser.add_argument("--reference", dest="reference", required=True)
 parser.add_argument("--output", dest="output", required=True)
+parser.add_argument("--cores", dest="cores", required=True)
 args = parser.parse_args()
 
-def run_minimap2(reference, reads, output_file):
-    cmd = f"minimap2 -a -x map-ont --MD -t 12 --eqx {reference} {reads} > {output_file}"
-    subprocess.run(cmd, shell=True, check=True)
-
-def parse_sam(sam_file, similarity_threshold=90.0, length_threshold=95.0):
-    hits = []
-    samfile = pysam.AlignmentFile(sam_file, "r")
-    for read in samfile.fetch():
-        if read.is_unmapped or read.is_supplementary or "SUP" in read.query_name:
-            continue
-        query_name = read.query_name
-        query_length = read.infer_read_length()
-        query_start = read.query_alignment_start
-        query_end = read.query_alignment_end
-        strand = '-' if read.is_reverse else '+'
-        target_name = read.reference_name
-        target_start = read.reference_start
-        target_end = read.reference_end
-        alignment_block_length = read.query_alignment_length
-        mapq = read.mapping_quality
-        # Calculate matching bases and the length used in the alignment
-        matching_bases = 0
-        total_aligned_length = 0
-        for op, length in read.cigartuples:
-            if op == 7:  # Match/Mismatch
-                matching_bases += length
-            if op != 1 and op != 4 and op != 5:  # Not an insertion to reference
-                total_aligned_length += length
-        # Calculate the similarity and the alignment length percentage
-        similarity = (matching_bases / total_aligned_length) * 100.0 if total_aligned_length > 0 else 0
-        alignment_length_percentage = (total_aligned_length / query_length) * 100.0 if query_length > 0 else 0
-        # Check against thresholds
-        if similarity >= similarity_threshold and alignment_length_percentage >= length_threshold:
-            hits.append({
-                'query_name': query_name,
-                'query_length': query_length,
-                'query_start': query_start,
-                'query_end': query_end,
-                'strand': strand,
-                'target_name': target_name,
-                'target_start': target_start,
-                'target_end': target_end,
-                'similarity': similarity,
-                'matching_bases': matching_bases,
-                'alignment_block_length': alignment_block_length,
-                'mapq': mapq
-            })
-    samfile.close()
-    return hits
+def supplement_with_genes_from_reads(genes_file, nanopore, output_file, cores, similarity_threshold=90.0, length_threshold=95.0):
+    # map the reads to the genes
+    cmd = f"minimap2 -a -x map-ont -t {cores} --eqx --MD {genes_file} {nanopore} > {output_file}"
+    if not os.path.exists(output_file):
+        subprocess.run(cmd, shell=True, check=True)
+    # import the sam
+    valid_candidates = []
+    proportion_reference_covered = {}
+    with pysam.AlignmentFile(output_file, "r") as sam_file:
+        for read in sam_file.fetch():
+            if read.is_unmapped:
+                continue
+            # Calculate matching bases and the length used in the alignment
+            matching_bases = 0
+            total_aligned_length = 0
+            reference_length = sam_file.get_reference_length(read.reference_name)
+            for op, length in read.cigartuples:
+                if op == 7:  # Match/Mismatch
+                    matching_bases += length
+                if op != 1 and op != 4 and op != 5:  # Not an insertion to reference
+                    total_aligned_length += length
+            # Calculate the similarity and the alignment length percentage
+            similarity = (matching_bases / total_aligned_length) * 100.0 if total_aligned_length > 0 else 0
+            alignment_length_percentage = (total_aligned_length / reference_length) * 100.0 if reference_length > 0 else 0
+            # Check against thresholds
+            if similarity >= similarity_threshold and alignment_length_percentage >= length_threshold:
+                if read.reference_name not in proportion_reference_covered:
+                    proportion_reference_covered[read.reference_name] = set()
+                proportion_reference_covered[read.reference_name].add(read.query_name)
+    for ref in proportion_reference_covered:
+        if len(proportion_reference_covered[ref]) >= 5:
+            valid_candidates.append(ref)
+    return valid_candidates
 
 def apply_rules(gene):
     gene = gene.replace("'", "")
@@ -222,13 +207,8 @@ def apply_rules(gene):
     return gene
 
 output_sam = os.path.join(args.output, f"{os.path.basename(args.reads).replace('.fastq.gz', '').replace('.gastq', '')}.sam")
-run_minimap2(args.reference, args.reads, output_sam)
-hits = parse_sam(output_sam)
-present_genes = set()
-for row in hits:
-    gene_name = apply_rules(row["target_name"])
-    if gene_name not in present_genes:
-        present_genes.add(gene_name)
+hits = supplement_with_genes_from_reads(args.reference, args.reads, output_sam, args.cores)
+present_genes = set([apply_rules(h.split(";")) for h in hits])
 outfile = os.path.join(args.output, "present_genes.txt")
 with open(outfile, "w") as o:
     o.write("\n".join(list(present_genes)))
