@@ -21,22 +21,30 @@ You will also need to install the AMRFinderPlus database.
 
 # Running the *E. coli* evaluation
 
-The *E. coli* evaluation can be run with:
+The *E. coli* evaluation can then be run with:
 ```{bash}
 cd Escherichia_coli && snakemake --cores 12 --use-conda --nolock --rerun-incomplete --keep-going
 ```
-Some samples will fail to assemble so the result plots have to be generated separately with:
+Some samples will fail to assemble so the result plots have to be generated separately. You will need to make a separate conda environment for the plotting dependencies. This can be done with:
+```{bash}
+conda env create -f envs/plot_results.yaml && conda activate E_coli_plot_env
+```
+The plots can then be generated with:
 ```{bash}
 python3 scripts/make_result_plots.py
 ```
 
 # Running the *K. pneumoniae* evaluation
 
-The *K. pneumoniae* evaluation can be run with:
+The *K. pneumoniae* evaluation can then be run with:
 ```{bash}
 cd Klebsiella_pneumoniae && snakemake --cores 12 --use-conda --nolock --rerun-incomplete --keep-going
 ```
-Some samples will fail to assemble so the result plots have to be generated separately with:
+Some samples will fail to assemble so the result plots have to be generated separately. You will need to make a separate conda environment for the plotting dependencies. This can be done with:
+```{bash}
+conda env create -f envs/plot_results.yaml && conda activate K_pneumoniae_plot_env
+```
+The plots can then be generated with:
 ```{bash}
 python3 scripts/make_result_plots.py
 ```
