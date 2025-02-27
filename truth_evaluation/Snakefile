@@ -102,7 +102,7 @@ rule run_amira:
     threads: 4
     resources: mem_mb=30000
     params:
-        panRG=os.path.join(panRG_pipeline_output, "AMR_supplemented_panRG.k15.w5.panidx.zip"),
+        panRG="AMR_supplemented_panRG.k15.w5.panidx.zip",
         species="Escherichia_coli"
     shell:
         "singularity run amira.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
@@ -115,7 +115,7 @@ rule run_amira_no_trim:
     threads: 4
     resources: mem_mb=30000
     params:
-        panRG=os.path.join(panRG_pipeline_output, "AMR_supplemented_panRG.k15.w5.panidx.zip"),
+        panRG="AMR_supplemented_panRG.k15.w5.panidx.zip",
         species="Escherichia_coli"
     shell:
         "singularity run amira.img amira --no-trim --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
