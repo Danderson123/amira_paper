@@ -1,0 +1,286 @@
+import glob
+import os
+
+# specify the output directories
+amira_output = f"amira_output"
+amira_output_no_trim = f"amira_output_no_trim"
+truth_gff_output = "truth_jsons"
+stats_output = "summary_stats"
+# make the directories
+for d in [amira_output, truth_gff_output, stats_output, amira_output_no_trim]:
+    if not os.path.exists(d):
+        os.mkdir(d)
+# specify the sample to nanopore read mapping
+mapping = {
+    "GCA_027944575.1_ASM2794457v1_genomic":  {"ONT": "subsampled_reads/SRR23044210_1.fastq"},
+    "GCA_027944595.1_ASM2794459v1_genomic":  {"ONT": "subsampled_reads/SRR23044211_1.fastq"},
+    "GCA_027944615.1_ASM2794461v1_genomic":  {"ONT": "subsampled_reads/SRR23044212_1.fastq"},
+    "GCA_027944635.1_ASM2794463v1_genomic":  {"ONT": "subsampled_reads/SRR23044213_1.fastq"},
+    "GCA_027944655.1_ASM2794465v1_genomic":  {"ONT": "subsampled_reads/SRR23044215_1.fastq"},
+    "GCA_027944675.1_ASM2794467v1_genomic":  {"ONT": "subsampled_reads/SRR23044216_1.fastq"},
+    "GCA_027944695.1_ASM2794469v1_genomic":  {"ONT": "subsampled_reads/SRR23044217_1.fastq"},
+    "GCA_027944715.1_ASM2794471v1_genomic":  {"ONT": "subsampled_reads/SRR23044218_1.fastq"},
+    "GCA_027944735.1_ASM2794473v1_genomic":  {"ONT": "subsampled_reads/SRR23044219_1.fastq"},
+    "GCA_027944775.1_ASM2794477v1_genomic":  {"ONT": "subsampled_reads/SRR23044221_1.fastq"},
+    "GCA_027944795.1_ASM2794479v1_genomic":  {"ONT": "subsampled_reads/SRR23044222_1.fastq"},
+    "GCA_027944815.1_ASM2794481v1_genomic":  {"ONT": "subsampled_reads/SRR23044223_1.fastq"},
+    "GCA_027944835.1_ASM2794483v1_genomic":  {"ONT": "subsampled_reads/SRR23044224_1.fastq"},
+    "GCA_027944855.1_ASM2794485v1_genomic":  {"ONT": "subsampled_reads/SRR23044203_1.fastq"},
+    "GCA_027944875.1_ASM2794487v1_genomic":  {"ONT": "subsampled_reads/SRR23044204_1.fastq"},
+    "GCA_027944895.1_ASM2794489v1_genomic":  {"ONT": "subsampled_reads/SRR23044205_1.fastq"},
+    "GCA_027944915.1_ASM2794491v1_genomic":  {"ONT": "subsampled_reads/SRR23044206_1.fastq"},
+    "GCA_027944935.1_ASM2794493v1_genomic":  {"ONT": "subsampled_reads/SRR23044207_1.fastq"},
+    "GCA_027944955.1_ASM2794495v1_genomic":  {"ONT": "subsampled_reads/SRR23044208_1.fastq"},
+    "GCA_027944995.1_ASM2794499v1_genomic":  {"ONT": "subsampled_reads/SRR23044209_1.fastq"},
+    "GCA_027945015.1_ASM2794501v1_genomic":  {"ONT": "subsampled_reads/SRR23044214_1.fastq"},
+    "GCA_027945035.1_ASM2794503v1_genomic":  {"ONT": "subsampled_reads/SRR23044225_1.fastq"},
+    "GCA_027945055.1_ASM2794505v1_genomic":  {"ONT": "subsampled_reads/SRR23044226_1.fastq"},
+    "GCA_028551585.1_ASM2855158v1_genomic":  {"ONT": "subsampled_reads/SRR23044220_1.fastq"},
+    "AUSMDU00010405":  {"ONT": "subsampled_reads/AUSMDU00010405.fastq"},
+    "AUSMDU00015264":  {"ONT": "subsampled_reads/AUSMDU00015264.fastq"},
+    "AUSMDU00021208":  {"ONT": "subsampled_reads/AUSMDU00021208.fastq"},
+    "AUSMDU00031899":  {"ONT": "subsampled_reads/AUSMDU00031899.fastq"},
+    "AUSMDU00031978":  {"ONT": "subsampled_reads/AUSMDU00031978.fastq"},
+    "AUSMDU00032793":  {"ONT": "subsampled_reads/AUSMDU00032793.fastq"},
+    "AUSMDU00036400":  {"ONT": "subsampled_reads/AUSMDU00036400.fastq"},
+    "AUSMDU00040126":  {"ONT": "subsampled_reads/AUSMDU00040126.fastq"},
+    "AUSMDU00055259":  {"ONT": "subsampled_reads/AUSMDU00055259.fastq"},
+    "AUSMDU00062512":  {"ONT": "subsampled_reads/AUSMDU00062512.fastq"}
+}
+
+illumina_mapping = {
+    "GCA_027944575.1_ASM2794457v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543847",
+    "GCA_027944595.1_ASM2794459v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543854",
+    "GCA_027944615.1_ASM2794461v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543861",
+    "GCA_027944635.1_ASM2794463v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543882",
+    "GCA_027944655.1_ASM2794465v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543883",
+    "GCA_027944675.1_ASM2794467v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543887",
+    "GCA_027944695.1_ASM2794469v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543892",
+    "GCA_027944715.1_ASM2794471v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543930",
+    "GCA_027944735.1_ASM2794473v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543931",
+    "GCA_027944775.1_ASM2794477v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543936",
+    "GCA_027944795.1_ASM2794479v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543941",
+    "GCA_027944815.1_ASM2794481v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543945",
+    "GCA_027944835.1_ASM2794483v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543947",
+    "GCA_027944855.1_ASM2794485v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543948",
+    "GCA_027944875.1_ASM2794487v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543793",
+    "GCA_027944895.1_ASM2794489v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543798",
+    "GCA_027944915.1_ASM2794491v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543803",
+    "GCA_027944935.1_ASM2794493v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543900",
+    "GCA_027944955.1_ASM2794495v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543904",
+    "GCA_027944995.1_ASM2794499v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543917",
+    "GCA_027945015.1_ASM2794501v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543922",
+    "GCA_027945035.1_ASM2794503v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543827",
+    "GCA_027945055.1_ASM2794505v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543837",
+    "GCA_028551585.1_ASM2855158v1_genomic": "/hps/nobackup/iqbal/dander/PRJNA907549/illumina_reads/SRR22543934",
+    "AUSMDU00010405": "/hps/nobackup/iqbal/dander/Ryan_Wick_E_coli/illumina_reads/AUSMDU00010405",
+    "AUSMDU00015264": "/hps/nobackup/iqbal/dander/Ryan_Wick_E_coli/illumina_reads/AUSMDU00015264",
+    "AUSMDU00021208": "/hps/nobackup/iqbal/dander/Ryan_Wick_E_coli/illumina_reads/AUSMDU00021208",
+    "AUSMDU00031899": "/hps/nobackup/iqbal/dander/Ryan_Wick_E_coli/illumina_reads/AUSMDU00031899",
+    "AUSMDU00031978": "/hps/nobackup/iqbal/dander/Ryan_Wick_E_coli/illumina_reads/AUSMDU00031978",
+    "AUSMDU00032793": "/hps/nobackup/iqbal/dander/Ryan_Wick_E_coli/illumina_reads/AUSMDU00032793",
+    "AUSMDU00036400": "/hps/nobackup/iqbal/dander/Ryan_Wick_E_coli/illumina_reads/AUSMDU00036400",
+    "AUSMDU00040126": "/hps/nobackup/iqbal/dander/Ryan_Wick_E_coli/illumina_reads/AUSMDU00040126",
+    "AUSMDU00055259": "/hps/nobackup/iqbal/dander/Ryan_Wick_E_coli/illumina_reads/AUSMDU00055259",
+    "AUSMDU00062512": "/hps/nobackup/iqbal/dander/Ryan_Wick_E_coli/illumina_reads/AUSMDU00062512"
+}
+
+# Listing samples and appending assembly data
+assemblies = glob.glob(os.path.join("finalised_assemblies/assemblies", "*.fa")) + glob.glob(os.path.join("finalised_assemblies/assemblies", "*.fasta"))
+SAMPLES = [os.path.basename(a).replace(".fna", "").replace(".fasta", "").replace(".fa", "") for a in assemblies]# if "GCA_027944995.1_ASM2794499v1_genomic" not in a]
+for sample in SAMPLES:
+    mapping[sample]['assembly'] = next((a for a in assemblies if sample in a), None)
+
+# Snakemake rules
+rule all:
+    input:
+        os.path.join(stats_output, "sample_violin_results.png")
+
+rule run_pandora:
+    input:
+        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+    output:
+        directory(os.path.join(pandora_output, "{sample}"))
+    threads: 4
+    resources: mem_mb=30000
+    params:
+        panRG=os.path.join(panRG_pipeline_output, "AMR_supplemented_panRG.k15.w5.panidx.zip"),
+        pandora_path="software/pandora-linux-precompiled-v0.12.0-alpha.0"
+    shell:
+        """
+        mkdir -p {output}
+        {params.pandora_path} map -t {threads} --debugging-files \
+        --min-gene-coverage-proportion 0.5 --max-covg 10000 \
+        -o {output} {params.panRG} {input.reads}
+        """
+
+rule run_amira:
+    input:
+        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+    output:
+        sample_output=directory(os.path.join(amira_output, "{sample}"))
+    threads: 4
+    resources: mem_mb=30000
+    params:
+        panRG=os.path.join(panRG_pipeline_output, "AMR_supplemented_panRG.k15.w5.panidx.zip"),
+        species="Escherichia_coli"
+    shell:
+        "singularity run amira.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+
+rule run_amira_no_trim:
+    input:
+        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+    output:
+        sample_output=directory(os.path.join(amira_output_no_trim, "{sample}"))
+    threads: 4
+    resources: mem_mb=30000
+    params:
+        panRG=os.path.join(panRG_pipeline_output, "AMR_supplemented_panRG.k15.w5.panidx.zip"),
+        species="Escherichia_coli"
+    shell:
+        "singularity run amira.img amira --no-trim --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+
+rule make_truth_json:
+    input:
+        assembly=lambda wildcards: mapping.get(wildcards.sample, {}).get('assembly', '0'),
+        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+    output:
+        sample_output=os.path.join(truth_gff_output, "{sample}.json")
+    threads: 12
+    resources:
+        mem_mb=30000
+    params:
+        AMR_reference=os.path.join(panRG_pipeline_output, "AMR_alleles_unified.fa")
+    shell:
+        """
+        python3 software/make_truth_with_minimap.py \
+        {input.assembly} {params.AMR_reference} {output.sample_output}
+        """
+
+rule unicycler_assemble:
+    input:
+        nanopore=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0'),
+        illumina_1=lambda wildcards: f"{illumina_mapping.get(wildcards.sample, '0')}_1.fastq.gz".replace(' ', ''),
+        illumina_2=lambda wildcards: f"{illumina_mapping.get(wildcards.sample, '0')}_2.fastq.gz".replace(' ', ''),
+    output:
+        directory(os.path.join("unicycler_v0.5.0_hybrid_assemblies", "{sample}"))
+    threads: 4
+    resources:
+        mem_mb=100000
+    conda: "envs/unicycler.yaml"
+    shell:
+        "unicycler -l {input.nanopore} -1 {input.illumina_1} -2 {input.illumina_2} -o {output} -t {threads} --keep 3"
+
+rule flye_assemble:
+    input:
+        nanopore=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+    output:
+        directory(os.path.join("flye_v2.9.3_nanopore_only_assemblies", "{sample}"))
+    threads: 4
+    resources:
+        mem_mb=100000
+    conda: "envs/flye.yaml"
+    shell:
+        "flye -g 5M -o {output} -t {threads} --nano-raw {input}"
+
+rule shovill_assemble:
+    input:
+        illumina_1=lambda wildcards: f"{illumina_mapping.get(wildcards.sample, '0')}_1.fastq.gz".replace(' ', ''),
+        illumina_2=lambda wildcards: f"{illumina_mapping.get(wildcards.sample, '0')}_2.fastq.gz".replace(' ', ''),
+    output:
+        directory(os.path.join("shovill_v1.1.0_illumina_only_assemblies", "{sample}"))
+    threads: 4
+    resources:
+        mem_mb=40000
+    singularity: "docker://staphb/shovill:1.1.0-2022Dec"
+    shell:
+        "shovill --outdir {output} --R1 {input.illumina_1} --R2 {input.illumina_2} --cpus {threads}"
+
+rule run_amrfp_on_shovill:
+    input:
+        os.path.join("shovill_v1.1.0_illumina_only_assemblies", "{sample}")
+    output:
+        outdir=directory(os.path.join("AMR_finder_plus_results.shovill_v1.1.0_illumina_only_assemblies", "{sample}")),
+        outfile=os.path.join("AMR_finder_plus_results.shovill_v1.1.0_illumina_only_assemblies", "{sample}", "AMR_finder_plus_results.tsv")
+    threads: 4
+    resources:
+        mem_mb=15000
+    shell:
+        "mkdir -p {output.outdir} && amrfinder -n {input}/contigs.fa -o {output.outfile} -t {threads} --plus --organism Escherichia"
+
+rule run_amrfp_on_unicycler:
+    input:
+        os.path.join("unicycler_v0.5.0_hybrid_assemblies", "{sample}")
+    output:
+        outdir=directory(os.path.join("AMR_finder_plus_results.unicycler_v0.5.0_hybrid_assemblies", "{sample}")),
+        outfile=os.path.join("AMR_finder_plus_results.unicycler_v0.5.0_hybrid_assemblies", "{sample}", "AMR_finder_plus_results.tsv")
+    threads: 4
+    resources:
+        mem_mb=15000
+    shell:
+        "mkdir -p {output.outdir} && amrfinder -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
+
+rule run_amrfp_on_flye:
+    input:
+        os.path.join("flye_v2.9.3_nanopore_only_assemblies", "{sample}")
+    output:
+        outdir=directory(os.path.join("AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", "{sample}")),
+        outfile=os.path.join("AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", "{sample}", "AMR_finder_plus_results.tsv")
+    threads: 4
+    resources:
+        mem_mb=15000
+    shell:
+        "mkdir -p {output.outdir} && amrfinder -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
+
+rule run_resfinder:
+    input:
+        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+    output:
+        directory(os.path.join("resfinder_results", "{sample}"))
+    threads: 1
+    resources:
+        mem_mb=15000
+    shell:
+        "mkdir -p {output} && python3 software/resfinder/run_resfinder.py -ifq {input.reads} -o {output} -s e.coli -db_res /hps/nobackup/iqbal/dander/Amira_truth_evaluation/software/resfinder/db_ncbi -acq -k /hps/nobackup/iqbal/dander/Amira_truth_evaluation/software/resfinder/cge/kma/kma"
+
+def aggregate_truth_gffs(wildcards):
+    return expand(os.path.join(truth_gff_output, "{sample}.json"), sample=SAMPLES)
+
+def aggregate_amira(wildcards):
+    return expand(os.path.join(amira_output, "{sample}"), sample=SAMPLES)
+
+def aggregate_amira_no_trim(wildcards):
+    return expand(os.path.join(amira_output_no_trim, "{sample}"), sample=SAMPLES)
+
+def aggregated_amrfp_flye(wildcards):
+   return expand(os.path.join("AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", "{sample}", "AMR_finder_plus_results.tsv"), sample=SAMPLES)
+
+def aggregated_amrfp_unicycler(wildcards):
+    return expand(os.path.join("AMR_finder_plus_results.unicycler_v0.5.0_hybrid_assemblies", "{sample}", "AMR_finder_plus_results.tsv"), sample=SAMPLES)
+
+def aggregated_amrfp_shovill(wildcards):
+    return expand(os.path.join("AMR_finder_plus_results.shovill_v1.1.0_illumina_only_assemblies", "{sample}", "AMR_finder_plus_results.tsv"), sample=SAMPLES)
+
+def aggregated_resfinder(wildcards):
+    return expand(os.path.join("resfinder_results", "{sample}"), sample=SAMPLES)
+
+rule get_stats:
+    input:
+        truth=aggregate_truth_gffs,
+        amira=aggregate_amira,
+        flye=aggregated_amrfp_flye,
+        unicycler=aggregated_amrfp_unicycler,
+        resfinder=aggregated_resfinder,
+        shovill=aggregated_amrfp_shovill,
+        amira_no_trim=aggregate_amira_no_trim
+    output:
+        os.path.join(stats_output, "sample_violin_results.png")
+    threads: 1
+    resources:
+        mem_mb=10000
+    params:
+        AMR_reference="AMR_alleles_unified.fa"
+    run:
+        # make plots of Amira-only results vs truth
+        command = f"python3 /hps/nobackup/iqbal/dander/Amira_truth_evaluation/scripts/plot_amira_only_stats.py {truth_dir} {amira_dir} {os.path.dirname(output[0])}"
+        shell(command)
