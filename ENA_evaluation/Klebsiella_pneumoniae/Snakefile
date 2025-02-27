@@ -17,7 +17,7 @@ def aggregate_amira(wildcards):
     return expand(os.path.join(output_dir, "Amira_v0.6.4_output", "{nanopore_sample}"), nanopore_sample=NANOPORE_SAMPLES)
 
 def aggregate_amira_no_filtering(wildcards):
-    return expand(os.path.join(output_dir, "Amira_v0.6.4_output.no_filtering", "{nanopore_sample}"), nanopore_sample=NANOPORE_SAMPLES)
+    return expand(os.path.join(output_dir, "Amira_v0.6.4_output.filter_contamination", "{nanopore_sample}"), nanopore_sample=NANOPORE_SAMPLES)
 
 def aggregate_truth(wildcards):
     return expand(os.path.join(output_dir, "true_gene_content", "{nanopore_sample}"), nanopore_sample=NANOPORE_SAMPLES)
@@ -46,12 +46,12 @@ rule run_amrfp_on_flye:
         os.path.join(output_dir, "flye_v2.9.3_nanopore_only_assemblies", "{nanopore_sample}")
     output:
         outdir=directory(os.path.join(output_dir, "AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", "{nanopore_sample}")),
-        outfile=os.path.join(output_dir, "AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", "{nanopore_sample}", "AMR_finder_plus_results.tsv")
+        outfile=os.path.join(output_dir, "AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", "{nanopore_sample}", "AMR_finder_plus_results.gff")
     threads: 4
     resources:
         mem_mb=15000
     shell:
-        "mkdir -p {output.outdir} && amrfinder -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Klebsiella_pneumoniae"
+        "mkdir -p {output.outdir} && amrfinder -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
 
 rule run_amira:
     input:
@@ -64,20 +64,20 @@ rule run_amira:
         panRG="Klebsiella.pneumoniae.panidx.zip",
         species="Klebsiella_pneumoniae"
     shell:
-        "singularity run amira.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira_v0.7.0.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
-rule run_amira_no_filtering:
+rule run_amira_filter:
     input:
         reads=lambda wildcards: os.path.join("nanopore_reads", wildcards.nanopore_sample + ".fastq.gz")
     output:
-        sample_output=directory(os.path.join(output_dir, "Amira_v0.6.4_output.no_filtering", "{nanopore_sample}"))
+        sample_output=directory(os.path.join(output_dir, "Amira_v0.6.4_output.filter_contamination", "{nanopore_sample}"))
     threads: 4
     resources: mem_mb=40000
     params:
         panRG="Klebsiella.pneumoniae.panidx.zip",
         species="Klebsiella_pneumoniae"
     shell:
-        "singularity run amira.img amira --no-filtering --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira_v0.7.0.img amira --filter-contamination --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule get_true_gene_content:
     input:
