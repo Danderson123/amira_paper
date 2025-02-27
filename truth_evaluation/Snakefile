@@ -84,7 +84,7 @@ illumina_mapping = {
 }
 
 # Listing samples and appending assembly data
-assemblies = glob.glob(os.path.join("amira_paper_data/truth_evaluation/finalised_assemblies", "*.fa")) + glob.glob(os.path.join("amira_paper_data/truth_evaluation/finalised_assemblies", "*.fasta"))
+assemblies = glob.glob(os.path.join("amira_paper_data/truth_evaluation/reference_assemblies", "*.fa")) + glob.glob(os.path.join("amira_paper_data/truth_evaluation/reference_assemblies", "*.fasta"))
 SAMPLES = [os.path.basename(a).replace(".fna", "").replace(".fasta", "").replace(".fa", "") for a in assemblies]
 for sample in SAMPLES:
     mapping[sample]['assembly'] = next((a for a in assemblies if sample in a), None)

@@ -15,8 +15,8 @@ The dependencies for the *K. pneumoniae* evaluation can be installed with:
 ```{bash}
 conda env create -f Klebsiella_pneumoniae/envs/K_pneumoniae_env.yaml && conda activate K_pneumoniae_env
 ```
-The *E. coli* panRG can be downloaded from [here](https://drive.google.com/file/d/13c_bUXnBEs9iEPPobou7-xEgkz_t08YP/view?usp=sharing).
-The *K. pneumoniae* panRG can be downloaded from [here](https://drive.google.com/file/d/1DYG3QW3nrQfSckIX9Vjbhbqz5bRd9W3j/view?usp=drive_link).
+The pipeline assumes the *E. coli* panRG is located in `Escherichia_coli`. It can be downloaded from [here](https://drive.google.com/file/d/13c_bUXnBEs9iEPPobou7-xEgkz_t08YP/view?usp=sharing).
+The pipeline assumes the *K. pneumoniae* panRG is located in `Klebsiella_pneumoniae`. It can be downloaded from [here](https://drive.google.com/file/d/1DYG3QW3nrQfSckIX9Vjbhbqz5bRd9W3j/view?usp=drive_link).
 You will also need to install the AMRFinderPlus database.
 
 # Running the *E. coli* evaluation
