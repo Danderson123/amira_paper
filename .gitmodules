@@ -1,3 +1,0 @@
-[submodule "truth_evaluation/software/resfinder"]
-	path = truth_evaluation/software/resfinder
-	url = https://github.com/genomicepidemiology/resfinder@f75c5205ca82ca825c2bef5494060d5169788135
