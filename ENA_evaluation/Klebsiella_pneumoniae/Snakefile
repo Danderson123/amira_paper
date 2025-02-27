@@ -89,4 +89,4 @@ rule get_true_gene_content:
     resources: mem_mb=30000, threads=4
     conda: "envs/make_truth.yaml"
     shell:
-        "mkdir -p {output.sample_output} && python3 scripts/get_true_AMR_genes.py --reads {input.reads} --reference {input.AMR_reference} --output {output.sample_output}"
+        "mkdir -p {output.sample_output} && python3 scripts/get_true_AMR_genes.py --cores {threads} --reads {input.reads} --reference {input.AMR_reference} --output {output.sample_output}"
