@@ -208,7 +208,7 @@ def apply_rules(gene):
 
 output_sam = os.path.join(args.output, f"{os.path.basename(args.reads).replace('.fastq.gz', '').replace('.gastq', '')}.sam")
 hits = supplement_with_genes_from_reads(args.reference, args.reads, output_sam, args.cores)
-present_genes = set([apply_rules(h.split(";")[1].split(".NG_", "")[0]) for h in hits])
+present_genes = set([apply_rules(h.split(";")[1].split(".NG_")[0]) for h in hits])
 outfile = os.path.join(args.output, "present_genes.txt")
 with open(outfile, "w") as o:
     o.write("\n".join(list(present_genes)))
