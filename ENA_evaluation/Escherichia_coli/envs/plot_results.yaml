@@ -1,0 +1,9 @@
+name: E_coli_plot_env
+channels:
+ - bioconda
+ - conda-forge
+dependencies:
+  - matplotlib=3.9.2
+  - seaborn=0.13.2
+  - tqdm=4.67.0
+  - pandas=2.2.2
