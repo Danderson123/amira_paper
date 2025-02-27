@@ -16,7 +16,7 @@ def aggregate_flye_nanopore(wildcards):
 def aggregate_amira(wildcards):
     return expand(os.path.join(output_dir, "Amira_v0.6.4_output", "{nanopore_sample}"), nanopore_sample=NANOPORE_SAMPLES)
 
-def aggregate_amira_no_filtering(wildcards):
+def aggregate_amira_filtering(wildcards):
     return expand(os.path.join(output_dir, "Amira_v0.6.4_output.filter_contamination", "{nanopore_sample}"), nanopore_sample=NANOPORE_SAMPLES)
 
 def aggregate_truth(wildcards):
@@ -25,7 +25,7 @@ def aggregate_truth(wildcards):
 rule all:
     input:
         aggregate_amira,
-        aggregate_amira_no_filtering,
+        aggregate_amira_filtering,
         aggregate_flye_nanopore,
         aggregate_truth
 
