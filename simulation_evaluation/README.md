@@ -11,7 +11,7 @@ The pipeline assumes the Amira singularity container is available in the directo
 conda env create -f envs/sims_env.yaml && conda activate simulation_env
 ```
 
-The panRG can be downloaded from [here](https://drive.google.com/file/d/13c_bUXnBEs9iEPPobou7-xEgkz_t08YP/view?usp=sharing).
+The pipeline assumes the panRG is avilable in this directory and it can be downloaded from [here](https://drive.google.com/file/d/13c_bUXnBEs9iEPPobou7-xEgkz_t08YP/view?usp=sharing).
 
 You will also need to install the AMRFinderPlus database.
 
