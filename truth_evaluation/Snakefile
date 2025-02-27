@@ -94,24 +94,6 @@ rule all:
     input:
         os.path.join(stats_output, "sample_violin_results.png")
 
-rule run_pandora:
-    input:
-        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
-    output:
-        directory(os.path.join(pandora_output, "{sample}"))
-    threads: 4
-    resources: mem_mb=30000
-    params:
-        panRG=os.path.join(panRG_pipeline_output, "AMR_supplemented_panRG.k15.w5.panidx.zip"),
-        pandora_path="software/pandora-linux-precompiled-v0.12.0-alpha.0"
-    shell:
-        """
-        mkdir -p {output}
-        {params.pandora_path} map -t {threads} --debugging-files \
-        --min-gene-coverage-proportion 0.5 --max-covg 10000 \
-        -o {output} {params.panRG} {input.reads}
-        """
-
 rule run_amira:
     input:
         reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
