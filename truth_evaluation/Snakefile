@@ -130,7 +130,7 @@ rule make_truth_json:
     resources:
         mem_mb=30000
     params:
-        AMR_reference=os.path.join(panRG_pipeline_output, "AMR_alleles_unified.fa")
+        AMR_reference="AMR_alleles_unified.fa"
     shell:
         """
         python3 software/make_truth_with_minimap.py \
