@@ -186,7 +186,7 @@ rule run_amrfp_on_shovill:
     resources:
         mem_mb=15000
     params:
-        amrfinder_db=""
+        amrfinder_db="/homes/dander/software/bin/data/2024-01-31.1"
     shell:
         "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input}/contigs.fa -o {output.outfile} -t {threads} --plus --organism Escherichia"
 
@@ -200,7 +200,7 @@ rule run_amrfp_on_unicycler:
     resources:
         mem_mb=15000
     params:
-        amrfinder_db=""
+        amrfinder_db="/homes/dander/software/bin/data/2024-01-31.1"
     shell:
         "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
 
@@ -214,7 +214,7 @@ rule run_amrfp_on_flye:
     resources:
         mem_mb=15000
     params:
-        amrfinder_db=""
+        amrfinder_db="/homes/dander/software/bin/data/2024-01-31.1"
     shell:
         "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
 
