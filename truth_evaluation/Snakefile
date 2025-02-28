@@ -185,8 +185,10 @@ rule run_amrfp_on_shovill:
     threads: 4
     resources:
         mem_mb=15000
+    params:
+        amrfinder_db=""
     shell:
-        "mkdir -p {output.outdir} && amrfinder -n {input}/contigs.fa -o {output.outfile} -t {threads} --plus --organism Escherichia"
+        "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input}/contigs.fa -o {output.outfile} -t {threads} --plus --organism Escherichia"
 
 rule run_amrfp_on_unicycler:
     input:
@@ -197,8 +199,10 @@ rule run_amrfp_on_unicycler:
     threads: 4
     resources:
         mem_mb=15000
+    params:
+        amrfinder_db=""
     shell:
-        "mkdir -p {output.outdir} && amrfinder -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
+        "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
 
 rule run_amrfp_on_flye:
     input:
@@ -209,8 +213,10 @@ rule run_amrfp_on_flye:
     threads: 4
     resources:
         mem_mb=15000
+    params:
+        amrfinder_db=""
     shell:
-        "mkdir -p {output.outdir} && amrfinder -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
+        "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
 
 rule run_resfinder:
     input:
