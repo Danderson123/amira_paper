@@ -17,4 +17,4 @@ dependencies:
  - pip:
     - pysam==0.22.1
     - pyfastaq==3.17.0
-   
+    - resfinder==4.6.0

@@ -227,7 +227,7 @@ rule run_resfinder:
     resources:
         mem_mb=15000
     shell:
-        "mkdir -p {output} && python3 software/resfinder/run_resfinder.py -ifq {input.reads} -o {output} -s e.coli -db_res software/db_ncbi -acq -k software/kma/kma"
+        "mkdir -p {output} && python3 -m resfinder -ifq {input.reads} -o {output} --nanopore -s e.coli -db_res software/db_ncbi -acq -k software/kma/kma"
 
 def aggregate_truth_gffs(wildcards):
     return expand(os.path.join(truth_gff_output, "{sample}.json"), sample=SAMPLES)
