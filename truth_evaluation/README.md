@@ -17,5 +17,5 @@ The *E. coli* panRG needs to be located in this directory and it can be download
 
 # Running the evaluation
 ```{bash}
-snakemake --cores 12 --use-conda --nolock --rerun-incomplete --keep-going 
+snakemake --cores 12 --use-conda --use-singularity --nolock --rerun-incomplete --keep-going 
 ```
