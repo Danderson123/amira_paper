@@ -105,7 +105,7 @@ rule run_amira:
         panRG="AMR_supplemented_panRG.k15.w5.panidx.zip",
         species="Escherichia_coli"
     shell:
-        "singularity run amira_v0.7.0.img --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira_v0.7.0.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule run_amira_no_trim:
     input:
