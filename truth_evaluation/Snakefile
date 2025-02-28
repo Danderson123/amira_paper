@@ -6,8 +6,9 @@ amira_output = "amira_output"
 amira_output_no_trim = "amira_output_no_trim"
 truth_gff_output = "truth_jsons"
 stats_output = "summary_stats"
+copy_numbers_out = "mapped_nanopore_reads"
 # make the directories
-for d in [amira_output, truth_gff_output, stats_output, amira_output_no_trim]:
+for d in [amira_output, truth_gff_output, stats_output, amira_output_no_trim, copy_numbers_out]:
     if not os.path.exists(d):
         os.mkdir(d)
 # specify the sample to nanopore read mapping
@@ -186,7 +187,7 @@ rule run_amrfp_on_shovill:
     resources:
         mem_mb=15000
     params:
-        amrfinder_db="/homes/dander/software/bin/data/2024-01-31.1"
+        amrfinder_db="2024-01-31.1"
     shell:
         "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input}/contigs.fa -o {output.outfile} -t {threads} --plus --organism Escherichia"
 
@@ -200,7 +201,7 @@ rule run_amrfp_on_unicycler:
     resources:
         mem_mb=15000
     params:
-        amrfinder_db="/homes/dander/software/bin/data/2024-01-31.1"
+        amrfinder_db="2024-01-31.1"
     shell:
         "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
 
@@ -214,7 +215,7 @@ rule run_amrfp_on_flye:
     resources:
         mem_mb=15000
     params:
-        amrfinder_db="/homes/dander/software/bin/data/2024-01-31.1"
+        amrfinder_db="2024-01-31.1"
     shell:
         "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
 
@@ -250,6 +251,22 @@ def aggregated_amrfp_shovill(wildcards):
 def aggregated_resfinder(wildcards):
     return expand(os.path.join("resfinder_results", "{sample}"), sample=SAMPLES)
 
+rule estimate_cellular_copy_numbers:
+    input:
+        assembly=lambda wildcards: mapping.get(wildcards.sample, {}).get('assembly', '0'),
+        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+    output:
+        os.path.join(copy_numbers_out, "{sample}.json")
+    threads: 12
+    resources:
+        mem_mb=30000
+    conda: "envs/cne.yaml"
+    shell:
+        "mkdir -p {copy_numbers_out} && python3 software/estimate_contig_copy_numbers.py {input.assembly} {input.reads} {copy_numbers_out}"
+
+def aggregated_cns(wildcards):
+    return expand(os.path.join(copy_numbers_out, "{sample}.json"), sample=SAMPLES)
+
 rule get_stats:
     input:
         truth=aggregate_truth_gffs,
@@ -258,7 +275,8 @@ rule get_stats:
         unicycler=aggregated_amrfp_unicycler,
         resfinder=aggregated_resfinder,
         shovill=aggregated_amrfp_shovill,
-        amira_no_trim=aggregate_amira_no_trim
+        amira_no_trim=aggregate_amira_no_trim,
+        cns=aggregated_cns
     output:
         os.path.join(stats_output, "sample_violin_results.png")
     threads: 1

@@ -1,0 +1,11 @@
+channels:
+ - bioconda
+ - conda-forge
+ - nodefaults
+dependencies:
+ - python=3.10.14
+ - pip
+ - minimap2=2.28
+ - samtools=1.20
+ - tqdm=4.67.0
+ - pandas=2.2.2
