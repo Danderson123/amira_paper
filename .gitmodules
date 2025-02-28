@@ -2,3 +2,7 @@
 	path = truth_evaluation/software/resfinder
 	url = https://github.com/genomicepidemiology/resfinder
 	branch = 9e2b5fbb85af57aa555e5d947d778e7703093d8f
+[submodule "truth_evaluation/software/kma"]
+	path = truth_evaluation/software/kma
+	url = https://github.com/genomicepidemiology/kma
+	branch = af5d55ff7ef3eeb02f324d8d0fb28b7f795483f9
