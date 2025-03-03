@@ -16,16 +16,12 @@ def aggregate_flye_nanopore(wildcards):
 def aggregate_amira(wildcards):
     return expand(os.path.join(output_dir, "Amira_v0.6.4_output", "{nanopore_sample}"), nanopore_sample=NANOPORE_SAMPLES)
 
-def aggregate_amira_filtering(wildcards):
-    return expand(os.path.join(output_dir, "Amira_v0.6.4_output.filter_contamination", "{nanopore_sample}"), nanopore_sample=NANOPORE_SAMPLES)
-
 def aggregate_truth(wildcards):
     return expand(os.path.join(output_dir, "true_gene_content", "{nanopore_sample}"), nanopore_sample=NANOPORE_SAMPLES)
 
 rule all:
     input:
         aggregate_amira,
-        aggregate_amira_filtering,
         aggregate_flye_nanopore,
         aggregate_truth
 
@@ -65,19 +61,6 @@ rule run_amira:
         species="Klebsiella_pneumoniae"
     shell:
         "singularity run ../amira_v0.7.0.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
-
-rule run_amira_filter:
-    input:
-        reads=lambda wildcards: os.path.join("nanopore_reads", wildcards.nanopore_sample + ".fastq.gz")
-    output:
-        sample_output=directory(os.path.join(output_dir, "Amira_v0.6.4_output.filter_contamination", "{nanopore_sample}"))
-    threads: 4
-    resources: mem_mb=40000
-    params:
-        panRG="Klebsiella.pneumoniae.panidx.zip",
-        species="Klebsiella_pneumoniae"
-    shell:
-        "singularity run ../amira_v0.7.0.img amira --filter-contamination --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule get_true_gene_content:
     input:

@@ -7,45 +7,46 @@ amira_output_no_trim = "amira_output_no_trim"
 truth_gff_output = "truth_jsons"
 stats_output = "summary_stats"
 copy_numbers_out = "mapped_nanopore_reads"
+benchmark_dir = "benchmarks"
 # make the directories
-for d in [amira_output, truth_gff_output, stats_output, amira_output_no_trim, copy_numbers_out]:
+for d in [amira_output, truth_gff_output, stats_output, amira_output_no_trim, copy_numbers_out, benchmark_dir]:
     if not os.path.exists(d):
         os.mkdir(d)
 # specify the sample to nanopore read mapping
 mapping = {
-    "GCA_027944575.1_ASM2794457v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044210_1.fastq"},
-    "GCA_027944595.1_ASM2794459v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044211_1.fastq"},
-    "GCA_027944615.1_ASM2794461v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044212_1.fastq"},
-    "GCA_027944635.1_ASM2794463v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044213_1.fastq"},
-    "GCA_027944655.1_ASM2794465v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044215_1.fastq"},
-    "GCA_027944675.1_ASM2794467v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044216_1.fastq"},
-    "GCA_027944695.1_ASM2794469v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044217_1.fastq"},
-    "GCA_027944715.1_ASM2794471v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044218_1.fastq"},
-    "GCA_027944735.1_ASM2794473v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044219_1.fastq"},
-    "GCA_027944775.1_ASM2794477v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044221_1.fastq"},
-    "GCA_027944795.1_ASM2794479v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044222_1.fastq"},
-    "GCA_027944815.1_ASM2794481v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044223_1.fastq"},
-    "GCA_027944835.1_ASM2794483v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044224_1.fastq"},
-    "GCA_027944855.1_ASM2794485v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044203_1.fastq"},
-    "GCA_027944875.1_ASM2794487v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044204_1.fastq"},
-    "GCA_027944895.1_ASM2794489v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044205_1.fastq"},
-    "GCA_027944915.1_ASM2794491v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044206_1.fastq"},
-    "GCA_027944935.1_ASM2794493v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044207_1.fastq"},
-    "GCA_027944955.1_ASM2794495v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044208_1.fastq"},
-    "GCA_027945015.1_ASM2794501v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044214_1.fastq"},
-    "GCA_027945035.1_ASM2794503v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044225_1.fastq"},
-    "GCA_027945055.1_ASM2794505v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044226_1.fastq"},
-    "GCA_028551585.1_ASM2855158v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044220_1.fastq"},
-    "AUSMDU00010405":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00010405.fastq"},
-    "AUSMDU00015264":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00015264.fastq"},
-    "AUSMDU00021208":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00021208.fastq"},
-    "AUSMDU00031899":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00031899.fastq"},
-    "AUSMDU00031978":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00031978.fastq"},
-    "AUSMDU00032793":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00032793.fastq"},
-    "AUSMDU00036400":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00036400.fastq"},
-    "AUSMDU00040126":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00040126.fastq"},
-    "AUSMDU00055259":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00055259.fastq"},
-    "AUSMDU00062512":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00062512.fastq"}
+    "GCA_027944575.1_ASM2794457v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044210_1.fastq.gz"},
+    "GCA_027944595.1_ASM2794459v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044211_1.fastq.gz"},
+    "GCA_027944615.1_ASM2794461v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044212_1.fastq.gz"},
+    "GCA_027944635.1_ASM2794463v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044213_1.fastq.gz"},
+    "GCA_027944655.1_ASM2794465v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044215_1.fastq.gz"},
+    "GCA_027944675.1_ASM2794467v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044216_1.fastq.gz"},
+    "GCA_027944695.1_ASM2794469v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044217_1.fastq.gz"},
+    "GCA_027944715.1_ASM2794471v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044218_1.fastq.gz"},
+    "GCA_027944735.1_ASM2794473v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044219_1.fastq.gz"},
+    "GCA_027944775.1_ASM2794477v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044221_1.fastq.gz"},
+    "GCA_027944795.1_ASM2794479v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044222_1.fastq.gz"},
+    "GCA_027944815.1_ASM2794481v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044223_1.fastq.gz"},
+    "GCA_027944835.1_ASM2794483v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044224_1.fastq.gz"},
+    "GCA_027944855.1_ASM2794485v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044203_1.fastq.gz"},
+    "GCA_027944875.1_ASM2794487v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044204_1.fastq.gz"},
+    "GCA_027944895.1_ASM2794489v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044205_1.fastq.gz"},
+    "GCA_027944915.1_ASM2794491v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044206_1.fastq.gz"},
+    "GCA_027944935.1_ASM2794493v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044207_1.fastq.gz"},
+    "GCA_027944955.1_ASM2794495v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044208_1.fastq.gz"},
+    "GCA_027945015.1_ASM2794501v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044214_1.fastq.gz"},
+    "GCA_027945035.1_ASM2794503v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044225_1.fastq.gz"},
+    "GCA_027945055.1_ASM2794505v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044226_1.fastq.gz"},
+    "GCA_028551585.1_ASM2855158v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044220_1.fastq.gz"},
+    "AUSMDU00010405":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00010405.fastq.gz"},
+    "AUSMDU00015264":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00015264.fastq.gz"},
+    "AUSMDU00021208":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00021208.fastq.gz"},
+    "AUSMDU00031899":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00031899.fastq.gz"},
+    "AUSMDU00031978":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00031978.fastq.gz"},
+    "AUSMDU00032793":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00032793.fastq.gz"},
+    "AUSMDU00036400":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00036400.fastq.gz"},
+    "AUSMDU00040126":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00040126.fastq.gz"},
+    "AUSMDU00055259":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00055259.fastq.gz"},
+    "AUSMDU00062512":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00062512.fastq.gz"}
 }
 
 illumina_mapping = {
@@ -105,6 +106,8 @@ rule run_amira:
     params:
         panRG="Escherichia.coli.panidx.zip",
         species="Escherichia_coli"
+    benchmark:
+        os.path.join(benchmark_dir, "run_amira.{sample}.txt")
     shell:
         "singularity run amira_v0.7.0.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
@@ -118,6 +121,8 @@ rule run_amira_no_trim:
     params:
         panRG="Escherichia.coli.panidx.zip",
         species="Escherichia_coli"
+    benchmark:
+        os.path.join(benchmark_dir, "run_amira_no_trim.{sample}.txt")
     shell:
         "singularity run amira_v0.7.0.img amira --no-trim --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
@@ -132,6 +137,8 @@ rule make_truth_json:
         mem_mb=30000
     params:
         AMR_reference="AMR_alleles_unified.fa"
+    benchmark:
+        os.path.join(benchmark_dir, "make_truth_json.{sample}.txt")
     shell:
         """
         python3 software/make_truth_with_minimap.py \
@@ -149,6 +156,8 @@ rule unicycler_assemble:
     resources:
         mem_mb=100000
     conda: "envs/unicycler.yaml"
+    benchmark:
+        os.path.join(benchmark_dir, "unicycler_assemble.{sample}.txt")
     shell:
         "unicycler -l {input.nanopore} -1 {input.illumina_1} -2 {input.illumina_2} -o {output} -t {threads} --keep 3"
 
@@ -161,6 +170,8 @@ rule flye_assemble:
     resources:
         mem_mb=100000
     conda: "envs/flye.yaml"
+    benchmark:
+        os.path.join(benchmark_dir, "flye_assemble.{sample}.txt")
     shell:
         "flye -g 5M -o {output} -t {threads} --nano-raw {input}"
 
@@ -174,6 +185,8 @@ rule shovill_assemble:
     resources:
         mem_mb=40000
     singularity: "docker://staphb/shovill:1.1.0-2022Dec"
+    benchmark:
+        os.path.join(benchmark_dir, "shovill_assemble.{sample}.txt")
     shell:
         "shovill --outdir {output} --R1 {input.illumina_1} --R2 {input.illumina_2} --cpus {threads}"
 
@@ -188,6 +201,8 @@ rule run_amrfp_on_shovill:
         mem_mb=15000
     params:
         amrfinder_db="2024-01-31.1"
+    benchmark:
+        os.path.join(benchmark_dir, "run_amrfp_on_shovill.{sample}.txt")
     shell:
         "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input}/contigs.fa -o {output.outfile} -t {threads} --plus --organism Escherichia"
 
@@ -202,6 +217,8 @@ rule run_amrfp_on_unicycler:
         mem_mb=15000
     params:
         amrfinder_db="2024-01-31.1"
+    benchmark:
+        os.path.join(benchmark_dir, "run_amrfp_on_unicycler.{sample}.txt")
     shell:
         "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
 
@@ -216,6 +233,8 @@ rule run_amrfp_on_flye:
         mem_mb=15000
     params:
         amrfinder_db="2024-01-31.1"
+    benchmark:
+        os.path.join(benchmark_dir, "run_amrfp_on_flye.{sample}.txt")
     shell:
         "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
 
@@ -227,6 +246,8 @@ rule run_resfinder:
     threads: 1
     resources:
         mem_mb=15000
+    benchmark:
+        os.path.join(benchmark_dir, "run_resfinder.{sample}.txt")
     shell:
         "mkdir -p {output} && python3 -m resfinder -ifq {input.reads} -o {output} --nanopore -s e.coli -db_res software/db_ncbi -acq -k software/kma/kma"
 
