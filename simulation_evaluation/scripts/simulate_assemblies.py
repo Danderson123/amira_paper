@@ -13,8 +13,10 @@ parser.add_argument("--allele-file", dest="allele_file", required=True)
 parser.add_argument("--reference-genome", dest="reference_genome", required=True)
 parser.add_argument("--reference-plasmid", dest="reference_plasmid", required=True)
 parser.add_argument("--output", dest="output", required=True)
+parser.add_argument("--seed", dest="seed", required=False, default=42)
 args = parser.parse_args()
 
+random.seed(args.seed)
 # Load the reference assembly
 genome = pyfastaq.sequences.file_reader(args.reference_genome)
 # Get the genome length and sequence

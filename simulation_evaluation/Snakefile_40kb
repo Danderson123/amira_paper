@@ -50,7 +50,7 @@ rule simulate_assembly:
         allele_file=AMR_allele_file
     conda: "envs/simulate_assembly.yaml"
     shell:
-        "python3 scripts/simulate_assemblies.py --context-fasta {input.context_fasta} --reference-genome {input.reference_genome} --reference-plasmid {input.reference_plasmid} --allele-file {params.allele_file} --output {output}"
+        "python3 scripts/simulate_assemblies.py --seed 42 --context-fasta {input.context_fasta} --reference-genome {input.reference_genome} --reference-plasmid {input.reference_plasmid} --allele-file {params.allele_file} --output {output}"
 
 rule simulate_r_10_reads:
     input:
