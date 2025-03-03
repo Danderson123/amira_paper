@@ -5,7 +5,7 @@ import os
 amira_output = "amira_output"
 amira_output_no_trim = "amira_output_no_trim"
 truth_gff_output = "truth_jsons"
-stats_output = "summary_stats"
+stats_output = "truth_results"
 copy_numbers_out = "mapped_nanopore_reads"
 benchmark_dir = "benchmarks"
 # make the directories
@@ -317,7 +317,5 @@ rule get_stats:
         mem_mb=10000
     params:
         AMR_reference="AMR_alleles_unified.fa"
-    run:
-        # make plots of Amira-only results vs truth
-        command = f"python3 /hps/nobackup/iqbal/dander/Amira_truth_evaluation/scripts/plot_amira_only_stats.py {truth_dir} {amira_dir} {os.path.dirname(output[0])}"
-        shell(command)
+    shell:
+        "python3 /hps/nobackup/iqbal/dander/amira_paper_latest/truth_evaluation/software/make_truth_results.py"
