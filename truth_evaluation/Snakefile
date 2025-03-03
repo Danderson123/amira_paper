@@ -288,6 +288,18 @@ rule estimate_cellular_copy_numbers:
 def aggregated_cns(wildcards):
     return expand(os.path.join(copy_numbers_out, "{sample}.json"), sample=SAMPLES)
 
+rule get_allele_sequences:
+    input:
+        truth=aggregate_truth_gffs,
+        cns=aggregated_cns
+    output:
+        directory("truth_allele_sequences")
+    threads: 1
+    resources:
+        mem_mb=10000
+    shell:
+        "python3 software/get_amr_allele_true_nucleotide_sequences.py"
+
 rule get_stats:
     input:
         truth=aggregate_truth_gffs,

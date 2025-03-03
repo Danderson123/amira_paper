@@ -14,7 +14,7 @@ parser.add_argument("--reference-genome", dest="reference_genome", required=True
 parser.add_argument("--reference-plasmid", dest="reference_plasmid", required=True)
 parser.add_argument("--output", dest="output", required=True)
 parser.add_argument("--cores", dest="cores", required=False, default=12)
-parser.add_argument("--seed", dest="seed", required=False, default=42)
+parser.add_argument("--seed", dest="seed", required=False, default=2025)
 args = parser.parse_args()
 
 random.seed(args.seed)

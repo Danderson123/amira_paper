@@ -53,7 +53,7 @@ rule simulate_assembly:
         allele_file=AMR_allele_file
     conda: "envs/simulate_assembly.yaml"
     shell:
-        "python3 scripts/simulate_assemblies.py --seed 42 --cores {threads} --context-fasta {input.context_fasta} --reference-genome {input.reference_genome} --reference-plasmid {input.reference_plasmid} --allele-file {params.allele_file} --output {output}"
+        "python3 scripts/simulate_assemblies.py --seed 2025 --cores {threads} --context-fasta {input.context_fasta} --reference-genome {input.reference_genome} --reference-plasmid {input.reference_plasmid} --allele-file {params.allele_file} --output {output}"
 
 rule simulate_r_10_reads:
     input:
@@ -67,7 +67,7 @@ rule simulate_r_10_reads:
         sim_depth="{depth}",
         mean_length=badread_length
     shell:
-        "badread simulate --seed 2024 --length {params.mean_length} --error_model nanopore2023 --qscore_model nanopore2023 --reference {input.assembly} --quantity {params.sim_depth}x > {output}"
+        "badread simulate --seed 2025 --length {params.mean_length} --error_model nanopore2023 --qscore_model nanopore2023 --reference {input.assembly} --quantity {params.sim_depth}x > {output}"
 
 rule run_amira:
     input:

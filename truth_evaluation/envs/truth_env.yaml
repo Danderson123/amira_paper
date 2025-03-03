@@ -9,6 +9,8 @@ dependencies:
  - snakemake=7.32.4
  - tqdm=4.67.0
  - ncbi-amrfinderplus=3.12.8
+ - seaborn=0.13.2
+ - matplotlib=3.9.2
  - pip:
     - pysam==0.22.1
     - pyfastaq==3.17.0
