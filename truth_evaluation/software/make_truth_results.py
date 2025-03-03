@@ -10,6 +10,8 @@ import pandas as pd
 import numpy as np
 from matplotlib.ticker import FormatStrFormatter, MultipleLocator
 from matplotlib.colors import LinearSegmentedColormap
+import subprocess
+from Bio import AlignIO
 
 # Define constants and shared settings
 plt.rcParams.update({'font.family': 'sans-serif', 'font.size': 16})
@@ -373,6 +375,163 @@ def plot_cn_heatmap(truth_results, assembler_results, output_prefix):
         plt.savefig(output_file.replace(".png", ".pdf"))
         plt.close()
 
+def calculate_allele_accuracy_with_mafft(all_seqs, output_dir, true_c_n, amira_c_n):
+    if not os.path.exists(os.path.join(output_dir, "temp_files")):
+        os.mkdir(os.path.join(output_dir, "temp_files"))
+    # Create a combined fasta file
+    combined_fasta = os.path.join(output_dir, "temp_files", "combined.fasta")
+    with open(combined_fasta, "w") as combined:
+        combined.write(all_seqs)
+    # Run MAFFT on the combined fasta file
+    mafft_command = ["mafft", "--auto", "--quiet", combined_fasta]
+    aligned_fasta = combined_fasta.replace(".fasta", ".aligned.fasta")
+    with open(aligned_fasta, "w") as aligned:
+        subprocess.run(mafft_command, stdout=aligned)
+    # Load the alignment
+    alignment = AlignIO.read(aligned_fasta, "fasta")
+    # Extract sequences
+    seqs = [(record.id, str(record.seq).upper()) for record in alignment]
+    truth_seqs = [aligned for header, aligned in seqs if "_truth" in header]
+    amira_seqs = [aligned for header, aligned in seqs if "_amira" in header]
+    # Create a similarity matrix
+    similarity_matrix = np.zeros((len(truth_seqs), len(amira_seqs)))
+    # Fill the similarity matrix
+    for i, truth_seq in enumerate(truth_seqs):
+        for j, amira_seq in enumerate(amira_seqs):
+            matching = 0
+            gapless = 0
+            for b in range(len(truth_seq)):
+                #if truth_seq[b] != "-" and amira_seq[b] != "-":
+                if truth_seq[b] == amira_seq[b]:
+                    matching += 1
+                gapless += 1
+            similarity = matching / gapless if gapless > 0 else 0
+            similarity_matrix[i, j] = similarity
+    # Perform the pairing
+    paired_similarities = []
+    paired_truths = set()
+    paired_amiras = set()
+    cn_tuples = []
+    while len(paired_truths) < len(truth_seqs) and len(paired_amiras) < len(amira_seqs):
+        # Find the highest similarity in the matrix that hasn't been paired yet
+        max_similarity = -1
+        best_truth_idx = -1
+        best_amira_idx = -1
+        copy_number_similarity = 100000
+        for i in range(len(truth_seqs)):
+            if i in paired_truths:
+                continue
+            for j in range(len(amira_seqs)):
+                if j in paired_amiras:
+                    continue
+                if similarity_matrix[i, j] > max_similarity:
+                #if abs(true_c_n[i] - amira_c_n[j]) <= copy_number_similarity:
+                    max_similarity = similarity_matrix[i, j]
+                    best_truth_idx = i
+                    best_amira_idx = j
+                    copy_number_similarity = abs(true_c_n[i] - amira_c_n[j])
+                if similarity_matrix[i, j] == max_similarity:
+                    copy_number_diff = abs(true_c_n[i] - amira_c_n[j])
+                    if copy_number_diff < copy_number_similarity:
+                        max_similarity = similarity_matrix[i, j]
+                        best_truth_idx = i
+                        best_amira_idx = j
+                        copy_number_similarity = abs(true_c_n[i] - amira_c_n[j])
+        # If a valid pair was found, mark the truth and amira alleles as paired
+        if best_truth_idx != -1 and best_amira_idx != -1:
+            paired_similarities.append(max_similarity)
+            cn_tuples.append((true_c_n[best_truth_idx], amira_c_n[best_amira_idx]))
+            paired_truths.add(best_truth_idx)
+            paired_amiras.add(best_amira_idx)
+    return paired_similarities, cn_tuples
+
+def plot_nucleotide_results_violin(similarities, output_file):
+    # Extract data
+    r9_4_1_data = similarities["9.4.1"]
+    r10_4_1_data = similarities["10.4"]
+    # Prepare data for a single plot
+    combined_data = []
+    for key, data in zip(["9.4.1", "10.4"], [r9_4_1_data, r10_4_1_data]):
+        accuracies = []
+        for value in data:
+            combined_data.append({"Technology": key, "Allele Accuracy": value})
+            accuracies.append(value)
+        print(f"{key} accuracy = {statistics.mean(accuracies)}")
+    # Convert to DataFrame for seaborn compatibility
+    df = pd.DataFrame(combined_data)
+    # Create the plot
+    fig = plt.figure(figsize=(12, 12), dpi=600)  # Explicitly set DPI here
+    # Violin plot
+    sns.violinplot(
+        x="Technology",
+        y="Allele Accuracy",
+        data=df,
+        palette="pastel",
+        linewidth=1.5,
+        saturation=1,
+        cut=0
+    )
+    # Strip plot
+    sns.stripplot(
+        x="Technology",
+        y="Allele Accuracy",
+        data=df,
+        palette="pastel",
+        jitter=True,
+        marker='o',
+        edgecolor='black',
+        linewidth=1,
+        alpha=1,
+        size=6
+    )
+    # Customize the plot
+    plt.ylabel("Allele accuracy", fontsize=16, labelpad=20)
+    plt.ylim([0.95, 1.001])
+#    plt.ylim([0.6, 1.005])
+    plt.xlabel("", fontsize=16)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.grid(axis="y", linestyle="--", alpha=0.7, zorder=1)
+    plt.grid(axis="x", visible=False)
+    plt.gca().spines['left'].set_visible(True)
+    plt.gca().spines['right'].set_visible(False)
+    plt.gca().spines['top'].set_visible(False)
+    plt.gca().spines['bottom'].set_linewidth(0.5)
+    plt.tight_layout()
+    # Save the plot
+    plt.savefig(output_file, dpi=900)
+    plt.savefig(output_file.replace(".png", ".pdf"))
+    plt.close()
+
+def plot_copy_numbers(copy_number_tuples_by_depth, output_file):
+    plt.rcParams.update({'font.family': 'sans-serif', 'font.size': 16})
+    fig = plt.figure(figsize=(12, 12), dpi=600)  # Explicitly set DPI here
+    line_styles = ['-', '--', '-.', ':']  # Line styles for the lines
+    marker_styles = ['o', 's', '^', 'D']  # Markers for the points
+    x_vals = []
+    y_vals = []
+    for i, d in enumerate(copy_number_tuples_by_depth):
+        x_vals += [float(t[0]) for t in copy_number_tuples_by_depth[d]]
+        y_vals += [float(t[1]) for t in copy_number_tuples_by_depth[d]]
+    # Scatter plot for data points
+    plt.scatter(x_vals, y_vals)
+    # Plot a reference line
+    plt.plot([i for i in range(9)], [i for i in range(9)], linestyle="--", color="darkgrey")
+    # Styling the plot
+    plt.grid(axis="y", linestyle="--", alpha=0.7, zorder=1)
+    plt.grid(axis="x", visible=False)
+    plt.gca().spines['left'].set_visible(True)
+    plt.gca().spines['right'].set_visible(False)
+    plt.gca().spines['top'].set_visible(False)
+    plt.gca().spines['bottom'].set_linewidth(0.5)
+    plt.xlim([0, 8])
+    plt.ylim([0, 8])
+    plt.xlabel("True cellular copy number", fontsize=16)
+    plt.ylabel("Amira cellular copy number estimate", fontsize=16)
+    # Adjust layout and save the file
+    plt.tight_layout()
+    plt.savefig(output_file, dpi=600, format='png')
+    plt.savefig(output_file.replace(".png", ".pdf"), format='pdf')
 
 truth_dir = "truth_jsons"
 amira_dir = "amira_output"

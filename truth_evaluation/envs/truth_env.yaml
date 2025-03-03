@@ -12,6 +12,7 @@ dependencies:
  - seaborn=0.13.2
  - matplotlib=3.9.2
  - mafft=7.526
+ - biopython=1.79
  - pip:
     - pysam==0.22.1
     - pyfastaq==3.17.0
