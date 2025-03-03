@@ -5,7 +5,7 @@ Simulations of *E. coli*, using the *Escherichia coli str. K-12 substr. MG1655* 
 
 # Installation
 
-The pipeline assumes the Amira singularity container is available in the directory, which can be installed [here](https://github.com/Danderson123/amira). You also need to have conda and singularity installed. All other dependencies can be installed via conda with:
+The pipeline assumes the Amira singularity container is available in the directory and is called `amira_v0.7.0.img`. This can be installed [here](https://github.com/Danderson123/amira). You also need to have conda and singularity installed. All other dependencies can be installed via conda with:
 
 ```{bash}
 conda env create -f envs/sims_env.yaml && conda activate simulation_env

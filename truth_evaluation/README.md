@@ -5,7 +5,7 @@ A pipeline to rerun the truth evaluation in the Amira paper on 32 *E. colI* samp
 
 # Installation
 
-The pipeline assumes the Amira singularity container is available in the directory, which can be installed [here](https://github.com/Danderson123/amira). You also need to have conda installed. You will need to build the `kma` binary to run ResFinder. You can do this by running:
+The pipeline assumes the Amira singularity container is available in the directory and is called `amira_v0.7.0.img`. This can be installed [here](https://github.com/Danderson123/amira). You also need to have conda installed. You will need to build the `kma` binary to run ResFinder. You can do this by running:
 ```{bash}
 cd software/kma && make && cd ../..
 ```
