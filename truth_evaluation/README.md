@@ -5,7 +5,7 @@ A pipeline to rerun the truth evaluation in the Amira paper on 32 *E. colI* samp
 
 # Data
 
-The pipeline assumes you have downloaded the truth evaluatiuon data from [here]() and it is available in this directory.
+The pipeline assumes you have downloaded the truth evaluatiuon data from [here]() and it is available in this directory. The *E. coli* panRG needs to be located in this directory and it can be downloaded from [here](https://drive.google.com/file/d/13c_bUXnBEs9iEPPobou7-xEgkz_t08YP/view?usp=sharing). You will also need to download the AMRFinderPlus database `v2024-01-31.1` from [here](https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/3.12/2024-01-31.1/) and specify the path to it in by modifying the `amrfinder_db` parameter in the `Snakefile`.
 
 # Installation
 
@@ -17,7 +17,6 @@ The remaining dependencies for the *E. coli* evaluation can be installed with:
 ```{bash}
 conda env create -f envs/truth_env.yaml && conda activate truth_env
 ```
-The *E. coli* panRG needs to be located in this directory and it can be downloaded from [here](https://drive.google.com/file/d/13c_bUXnBEs9iEPPobou7-xEgkz_t08YP/view?usp=sharing). You will also need to download the AMRFinderPlus database `v2024-01-31.1` from [here](https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/3.12/2024-01-31.1/) and specify the path to it in by modifying the `amrfinder_db` parameter in the `Snakefile`.
 
 # Running the evaluation
 ```{bash}
