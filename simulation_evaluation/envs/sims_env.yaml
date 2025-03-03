@@ -16,6 +16,7 @@ dependencies:
  - seaborn=0.13.2
  - palettable=3.3.3
  - biopython=1.79
+ - mafft=7.526
  - pip:
     - pysam==0.22.1
     - pyfastaq==3.17.0

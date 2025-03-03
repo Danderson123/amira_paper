@@ -401,9 +401,11 @@ resfinder_results = process_resfinder_results(glob.glob(os.path.join(resfinder_d
 shovill_results = process_AMRFP_results(glob.glob(os.path.join(shovill_dir, "*", "*.tsv")), reference_genes)
 # process the amira results
 amira_results = {"r9": {}, "r10": {}}
+samples = []
 for s in glob.glob(os.path.join(amira_dir, "*")):
     if os.path.exists(os.path.join(s, "amira_results.tsv")):
         sample = os.path.basename(s)
+        samples.append(sample)
         amira_table = pd.read_csv(os.path.join(s, "amira_results.tsv"), sep="\t")
         if "AUSM" in sample:
             amira_results["r10"][sample] = {}
@@ -446,3 +448,69 @@ plot_cn_heatmap(truth_results,
                         resfinder_results,
                     ],
                     os.path.join(output_dir, "figure_4d_cn_heatmap.png"))
+
+# Initialize dictionary to store data per scenario, depth, and length
+data_list = {s: {} for s in samples}
+
+def rc_sequence(sequence):
+    replacement = {"A": "T", "T": "A", "C": "G", "G": "C"}
+    return "".join(list(reversed([replacement[b] for b in list(sequence)])))
+
+all_similarities = {}
+all_copy_number_tuples = {}
+for s in tqdm(samples):
+    if "AUSM" in s:
+        method = "10.4"
+    else:
+        method = "9.4.1"
+    if method not in all_similarities:
+        all_similarities[method] = []
+        all_copy_number_tuples[method] = []
+    # Import the truth json
+    with open(os.path.join("truth_jsons", s + ".json")) as i:
+        truth_counts = json.load(i)
+    # import the truth fasta
+    with open(os.path.join("truth_allele_sequences", f"{s}.fasta")) as i:
+        allele_seqs = i.read().split(">")[1:]
+    true_nucleotide_sequences = {}
+    true_copy_numbers = {}
+    for allele in allele_seqs:
+        allele_name = allele.split("\n")[0]
+        truth_sequence = "".join(allele.split("\n")[1:])
+        amira_allele, reference_allele, cellular_copy_number = allele_name.split(";")
+        gene_name = apply_rules(reference_allele.split(".")[0])
+        if gene_name not in true_nucleotide_sequences:
+            true_nucleotide_sequences[gene_name] = []
+            true_copy_numbers[gene_name] = []
+        true_nucleotide_sequences[gene_name].append(f">{gene_name}_truth\n{truth_sequence}")
+        true_copy_numbers[gene_name].append(float(cellular_copy_number.replace("CCN_", "")))
+    # load the amira tsv
+    amira_out = os.path.join("amira_output", s, "amira_results.tsv")
+    if not os.path.exists(amira_out):
+        continue
+    amira_results = pd.read_csv(amira_out, sep="\t")
+    # get the amira allele sequences
+    amira_nucleotide_sequences = {}
+    amira_copy_numbers = {}
+    for index, row in amira_results.iterrows():
+        amira_allele_name = row["Amira allele"]
+        gene_name = apply_rules(row["Determinant name"])
+        with open(os.path.join("amira_output", s, "AMR_allele_fastqs", amira_allele_name, "06.final_sequence.fasta")) as i:
+            allele_sequence = "".join(i.read().split("\n")[1:])
+        if gene_name not in amira_nucleotide_sequences:
+            amira_nucleotide_sequences[gene_name] = []
+            amira_copy_numbers[gene_name] = []
+        amira_nucleotide_sequences[gene_name].append(f">{gene_name}_amira\n{allele_sequence}")
+        amira_copy_numbers[gene_name].append(row['Approximate copy number'])
+    # get the nucleotide accuracy of the amira alleles
+    for gene_name in true_nucleotide_sequences:
+        if gene_name in amira_nucleotide_sequences:
+            all_sequences = "\n".join(true_nucleotide_sequences[gene_name] + amira_nucleotide_sequences[gene_name])
+            #amira_similarities = calculate_allele_accuracy_with_mafft(all_sequences, output_dir)
+            amira_similarities, copy_number_tuples = calculate_allele_accuracy_with_mafft(all_sequences, output_dir, true_copy_numbers[gene_name], amira_copy_numbers[gene_name])
+            all_similarities[method] += amira_similarities
+            all_copy_number_tuples[method] += copy_number_tuples
+
+#plot_nucleotide_results(all_similarities, os.path.join(output_dir, "nucleotide_accuracies.png"))
+plot_nucleotide_results_violin(all_similarities, os.path.join(output_dir, "figure_4c.png"))
+plot_copy_numbers(all_copy_number_tuples, os.path.join(output_dir, "figure_4b.png"))

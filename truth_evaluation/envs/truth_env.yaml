@@ -11,6 +11,7 @@ dependencies:
  - ncbi-amrfinderplus=3.12.8
  - seaborn=0.13.2
  - matplotlib=3.9.2
+ - mafft=7.526
  - pip:
     - pysam==0.22.1
     - pyfastaq==3.17.0
