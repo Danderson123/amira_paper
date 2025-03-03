@@ -13,6 +13,7 @@ parser.add_argument("--allele-file", dest="allele_file", required=True)
 parser.add_argument("--reference-genome", dest="reference_genome", required=True)
 parser.add_argument("--reference-plasmid", dest="reference_plasmid", required=True)
 parser.add_argument("--output", dest="output", required=True)
+parser.add_argument("--cores", dest="cores", required=False, default=12)
 parser.add_argument("--seed", dest="seed", required=False, default=42)
 args = parser.parse_args()
 
@@ -36,7 +37,7 @@ for sequence in plasmid:
 # get the true amr gene content of the block
 out_gff = args.output.replace('.fasta', '.AMR_content.gff')
 try:
-    subprocess.run(f"python3 {pathlib.Path(__file__).parent.resolve()}/make_truth_with_minimap.py {args.context_fasta} {args.allele_file} {out_gff}", shell=True, check=True)
+    subprocess.run(f"python3 {pathlib.Path(__file__).parent.resolve()}/make_truth_with_minimap.py {args.context_fasta} {args.allele_file} {out_gff} {args.cores}", shell=True, check=True)
     # process the gff file
     gff_content = {}
     with open(out_gff) as i:

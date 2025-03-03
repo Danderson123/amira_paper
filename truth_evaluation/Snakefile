@@ -283,7 +283,7 @@ rule estimate_cellular_copy_numbers:
         mem_mb=30000
     conda: "envs/cne.yaml"
     shell:
-        "mkdir -p {copy_numbers_out} && python3 software/estimate_contig_copy_numbers.py {input.assembly} {input.reads} {copy_numbers_out}"
+        "mkdir -p {copy_numbers_out} && python3 software/estimate_contig_copy_numbers.py {input.assembly} {input.reads} {copy_numbers_out} {threads}"
 
 def aggregated_cns(wildcards):
     return expand(os.path.join(copy_numbers_out, "{sample}.json"), sample=SAMPLES)

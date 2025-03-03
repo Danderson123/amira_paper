@@ -48,11 +48,12 @@ rule simulate_assembly:
         context_fasta= lambda wildcards: os.path.join("AMR_contexts", wildcards.sample + ".fasta")
     output:
         os.path.join('simulated_assemblies', "{sample}.fasta")
+    threads: 12
     params:
         allele_file=AMR_allele_file
     conda: "envs/simulate_assembly.yaml"
     shell:
-        "python3 scripts/simulate_assemblies.py --seed 42 --context-fasta {input.context_fasta} --reference-genome {input.reference_genome} --reference-plasmid {input.reference_plasmid} --allele-file {params.allele_file} --output {output}"
+        "python3 scripts/simulate_assemblies.py --seed 42 --cores {threads} --context-fasta {input.context_fasta} --reference-genome {input.reference_genome} --reference-plasmid {input.reference_plasmid} --allele-file {params.allele_file} --output {output}"
 
 rule simulate_r_10_reads:
     input:

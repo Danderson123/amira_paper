@@ -74,12 +74,13 @@ parser = argparse.ArgumentParser(description="Map genes to assemblies and genera
 parser.add_argument("assembly", help="Assembly path.")
 parser.add_argument("reads", help="Read path.")
 parser.add_argument("output", help="Output path.")
+parser.add_argument("cores", help="Number of CPUs to use.")
 args = parser.parse_args()
 
 sample = os.path.basename(args.assembly).replace(".fasta", "").replace(".fa", "")
 sam_file = os.path.join(args.output, sample + ".sam")
 reference = args.assembly
-output_bam = map_fastq_to_ref(args.reads, args.assembly, sam_file, cores)
+output_bam = map_fastq_to_ref(args.reads, args.assembly, sam_file, args.cores)
 depth_per_contig, longest_contig = get_mean_read_depth_per_contig(output_bam)
 normalised_depths = {c: depth_per_contig[c] / depth_per_contig[longest_contig] for c in depth_per_contig}
 with open(os.path.join(args.output, sample + ".json"), "w") as o:
