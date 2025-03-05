@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 AMR_allele_file = "AMR_alleles_unified.fa"
 output_dir = 'simulations_20kb_r10'
 badread_length = "20000,19215.5"
-seed = 42  # Seed for reproducibility
+seed = 2025  # Seed for reproducibility
 # Set the seed for random and numpy
 random.seed(seed)
 np.random.seed(seed)
@@ -81,7 +81,7 @@ rule run_amira:
         panRG="Escherichia.coli.panidx.zip",
         species="Escherichia_coli"
     shell:
-        "singularity run amira_v0.7.0.img amira --reads {input.readfile} --output {output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira_v0.7.1.img amira --reads {input.readfile} --output {output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule flye_assemble:
     input:

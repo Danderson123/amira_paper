@@ -8,8 +8,9 @@ truth_gff_output = "truth_jsons"
 stats_output = "truth_results"
 copy_numbers_out = "mapped_nanopore_reads"
 benchmark_dir = "benchmarks"
+trimmed_reads = "trimmed_reads"
 # make the directories
-for d in [amira_output, truth_gff_output, stats_output, amira_output_no_trim, copy_numbers_out, benchmark_dir]:
+for d in [amira_output, truth_gff_output, stats_output, amira_output_no_trim, copy_numbers_out, benchmark_dir, trimmed_reads]:
     if not os.path.exists(d):
         os.mkdir(d)
 # specify the sample to nanopore read mapping
@@ -98,7 +99,7 @@ rule all:
 
 rule run_amira:
     input:
-        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+        reads=os.path.join(trimmed_reads, "{sample}.fastq.gz")
     output:
         sample_output=directory(os.path.join(amira_output, "{sample}"))
     threads: 4
@@ -109,7 +110,7 @@ rule run_amira:
     benchmark:
         os.path.join(benchmark_dir, "run_amira.{sample}.txt")
     shell:
-        "singularity run amira_v0.7.0.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira_v0.7.1.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule run_amira_no_trim:
     input:
@@ -124,12 +125,11 @@ rule run_amira_no_trim:
     benchmark:
         os.path.join(benchmark_dir, "run_amira_no_trim.{sample}.txt")
     shell:
-        "singularity run amira_v0.7.0.img amira --no-trim --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira_v0.7.1.img amira --no-trim --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule make_truth_json:
     input:
-        assembly=lambda wildcards: mapping.get(wildcards.sample, {}).get('assembly', '0'),
-        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+        assembly=lambda wildcards: mapping.get(wildcards.sample, {}).get('assembly', '0')
     output:
         sample_output=os.path.join(truth_gff_output, "{sample}.json")
     threads: 12
@@ -145,9 +145,19 @@ rule make_truth_json:
         {input.assembly} {params.AMR_reference} {output.sample_output} {threads}
         """
 
+rule trim_adapters:
+    input:
+        nanopore=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+    output:
+        os.path.join(trimmed_reads, "{sample}.fastq.gz")
+    benchmark:
+        os.path.join(benchmark_dir, "trim_adapters.{sample}.txt")
+    shell:
+        "porechop_abi -abi -i {input} -o {output}"
+
 rule unicycler_assemble:
     input:
-        nanopore=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0'),
+        nanopore=os.path.join(trimmed_reads, "{sample}.fastq.gz"),
         illumina_1=lambda wildcards: f"{illumina_mapping.get(wildcards.sample, '0')}_1.fastq.gz".replace(' ', ''),
         illumina_2=lambda wildcards: f"{illumina_mapping.get(wildcards.sample, '0')}_2.fastq.gz".replace(' ', ''),
     output:
@@ -163,7 +173,7 @@ rule unicycler_assemble:
 
 rule flye_assemble:
     input:
-        nanopore=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+        nanopore=os.path.join(trimmed_reads, "{sample}.fastq.gz")
     output:
         directory(os.path.join("flye_v2.9.3_nanopore_only_assemblies", "{sample}"))
     threads: 4
@@ -240,7 +250,7 @@ rule run_amrfp_on_flye:
 
 rule run_resfinder:
     input:
-        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+        reads=os.path.join(trimmed_reads, "{sample}.fastq.gz")
     output:
         directory(os.path.join("resfinder_results", "{sample}"))
     threads: 1
@@ -275,7 +285,7 @@ def aggregated_resfinder(wildcards):
 rule estimate_cellular_copy_numbers:
     input:
         assembly=lambda wildcards: mapping.get(wildcards.sample, {}).get('assembly', '0'),
-        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+        reads=os.path.join(trimmed_reads, "{sample}.fastq.gz")
     output:
         os.path.join(copy_numbers_out, "{sample}.json")
     threads: 12

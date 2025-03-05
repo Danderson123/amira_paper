@@ -175,7 +175,7 @@ def process_resfinder_results(resfinder_files, reference_genes):
 def plot_recall_and_precision(truth_results, assembler_results, output):
     # Initialize a list to collect data for plotting
     plot_data = []
-    labels = ["Amira", "Shovill", "Flye\nAMRFP", "ResFinder", "Unicycler\nAMRFP"]
+    labels = ["Amira", "Flye\nAMRFP", "ResFinder", "Unicycler\nAMRFP"]
 
     for tech in ["r9", "r10"]:
         for m, method in enumerate(assembler_results):
@@ -188,13 +188,12 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
                 total_fn = 0
                 total_fp = 0
                 if sample not in method[tech]:
+                    continue
                     method[tech][sample] = {}
 
                 for gene in set(truth_results[tech][sample]).union(method[tech].get(sample, {})):
                     truth_count = truth_results[tech][sample].get(gene, 0)
                     method_count = method[tech].get(sample, {}).get(gene, 0)
-                    #if label == "ResFinder" and method_count > 0:
-                    #    method_count = 1
                     # Calculate true positives, false negatives, and false positives
                     tp = min(truth_count, method_count)
                     fn = max(0, truth_count - method_count)
@@ -203,7 +202,7 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
                     total_tp += tp
                     total_fn += fn
                     total_fp += fp
-                    if sample == "AUSMDU00055259" and "Amira" in label:
+                    if "ResFinder" in label and fn > 0:
                         print(sample, gene, truth_count, method_count)
 
                 # Calculate proportions for stacking
@@ -217,11 +216,15 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
                 recalls.append(tp_truth_proportion)
                 precisions.append(tp_method_proportion)
 
-            sensitivity = statistics.mean(recalls)
-            fn_prop = 1 - sensitivity
-            specificity = statistics.mean(precisions)
-            fp_prop = 1- specificity
-            print(tech, label, "Recall: ", sensitivity, " Precision: ", specificity, "\n")
+            if len(recalls) != 0:
+                sensitivity = statistics.mean(recalls)
+                fn_prop = 1 - sensitivity
+                specificity = statistics.mean(precisions)
+                fp_prop = 1- specificity
+                print(tech, label, "Recall: ", sensitivity, " Precision: ", specificity, "\n")
+            else:
+                sensitivity = 0
+                specificity = 0
             # Append aggregated data for plotting
             plot_data.append({
                 "Technology": tech,
@@ -325,8 +328,9 @@ def plot_cn_heatmap(truth_results, assembler_results, output_prefix):
                 for t, tool_results in enumerate(assembler_results):
                     tool_label = tools[t]
                     tool_count = tool_results.get(tech, {}).get(sample, {}).get(gene, 0)
-                    if tool_label == "ResFinder" and tool_count > 0:
-                        tool_count = 1
+                    # if tool_label == "ResFinder" and tool_count > 1:
+                    #     print(sample, gene)
+                    #     tool_count = 1
                     recall = tool_count / truth_count  # Calculate recall
                     if recall > 1:
                         recall = 1
@@ -596,7 +600,6 @@ if "GCA_027944615.1_ASM2794461v1_genomic" in amira_results["r9"]:
 plot_recall_and_precision(truth_results,
                     [
                         amira_results,
-                        shovill_results,
                         flye_results,
                         resfinder_results,
                         unicycler_results
