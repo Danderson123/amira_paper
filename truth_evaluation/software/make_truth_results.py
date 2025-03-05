@@ -146,6 +146,8 @@ def apply_rules(gene):
         gene = "qepA"
     if "blaIMI" in gene:
         gene = "blaIMI"
+    if "mcr-1" in gene:
+        gene = "mcr-1"
     return gene
 
 def process_resfinder_results(resfinder_files, reference_genes):
@@ -163,6 +165,8 @@ def process_resfinder_results(resfinder_files, reference_genes):
             cleaned_gene = apply_rules(row["Resistance gene"])
             if cleaned_gene not in reference_genes:
                 continue
+            if row["Identity"] < 90 or row["Coverage"] < 90:
+                continue
             if cleaned_gene not in resfinder_results[tech][sample]:
                 resfinder_results[tech][sample][cleaned_gene] = 0
             resfinder_results[tech][sample][cleaned_gene] += 1
@@ -171,7 +175,7 @@ def process_resfinder_results(resfinder_files, reference_genes):
 def plot_recall_and_precision(truth_results, assembler_results, output):
     # Initialize a list to collect data for plotting
     plot_data = []
-    labels = ["Amira", "Flye\nAMRFP", "ResFinder", "Unicycler\nAMRFP"]
+    labels = ["Amira", "Shovill", "Flye\nAMRFP", "ResFinder", "Unicycler\nAMRFP"]
 
     for tech in ["r9", "r10"]:
         for m, method in enumerate(assembler_results):
@@ -189,17 +193,18 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
                 for gene in set(truth_results[tech][sample]).union(method[tech].get(sample, {})):
                     truth_count = truth_results[tech][sample].get(gene, 0)
                     method_count = method[tech].get(sample, {}).get(gene, 0)
-                    if label == "ResFinder" and method_count > 0:
-                        method_count = 1
+                    #if label == "ResFinder" and method_count > 0:
+                    #    method_count = 1
                     # Calculate true positives, false negatives, and false positives
                     tp = min(truth_count, method_count)
                     fn = max(0, truth_count - method_count)
                     fp = max(0, method_count - truth_count)
-
                     # Accumulate totals
                     total_tp += tp
                     total_fn += fn
                     total_fp += fp
+                    if sample == "AUSMDU00055259" and "Amira" in label:
+                        print(sample, gene, truth_count, method_count)
 
                 # Calculate proportions for stacking
                 total_truth_calls = total_tp + total_fn
@@ -207,7 +212,6 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
 
                 tp_truth_proportion = total_tp / total_truth_calls if total_truth_calls > 0 else 0
                 fn_truth_proportion = total_fn / total_truth_calls if total_truth_calls > 0 else 0
-
                 tp_method_proportion = total_tp / total_method_calls if total_method_calls > 0 else 0
                 fp_method_proportion = total_fp / total_method_calls if total_method_calls > 0 else 0
                 recalls.append(tp_truth_proportion)
@@ -592,6 +596,7 @@ if "GCA_027944615.1_ASM2794461v1_genomic" in amira_results["r9"]:
 plot_recall_and_precision(truth_results,
                     [
                         amira_results,
+                        shovill_results,
                         flye_results,
                         resfinder_results,
                         unicycler_results

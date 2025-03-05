@@ -13,7 +13,7 @@ from matplotlib.patches import Patch
 
 sys.setrecursionlimit(50000)
 
-amira_outputs = glob.glob("evaluation_results/Amira_v0.6.4_output/*/amira_results.tsv")
+amira_outputs = glob.glob("evaluation_results/Amira_v0.7.0_output/*/amira_results.tsv")
 
 def apply_rules(gene):
     gene = gene.replace("'", "")
@@ -192,26 +192,23 @@ pa_data = {"Method": [], "Gene": [], "Val": []}
 missing_data = {"sample": [], "gene": [], "component": []}
 for a in tqdm(amira_outputs):
     sample = os.path.basename(os.path.dirname(a))
-    amrfinder = os.path.join("evaluation_results/AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", sample, "AMR_finder_plus_results.tsv")
-    amira_no_filtering = os.path.join("evaluation_results/Amira_v0.6.4_output.no_filtering", sample, "amira_results.tsv")
+    amrfinder = os.path.join("evaluation_results/AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", sample, "AMR_finder_plus_results.gff")
+    truth_file = os.path.join("evaluation_results", "true_gene_content", sample, "present_genes.txt")
+    if not os.path.exists(truth_file):
+        continue
     if not os.path.exists(amrfinder):
         continue
-    if not os.path.exists(amira_no_filtering):
-        continue
+    print(sample)
     amira_content = pd.read_csv(a, sep="\t")
-    amira_no_filtering = pd.read_csv(amira_no_filtering, sep="\t")
     amrfinder_content = pd.read_csv(amrfinder, sep="\t")
+    with open(truth_file) as i:
+        truth = set([apply_rules(g) for g in i.read().split("\n")])
     # process amira results
     unique_amira_genes = {}
     for index, row in amira_content.iterrows():
         gene_name = apply_rules(row["Determinant name"])
         if gene_name not in unique_amira_genes:
             unique_amira_genes[gene_name] = set()
-    unique_amira_no_filtering_genes = {}
-    for index, row in amira_no_filtering.iterrows():
-        gene_name = apply_rules(row["Determinant name"])
-        if gene_name not in unique_amira_no_filtering_genes:
-            unique_amira_no_filtering_genes[gene_name] = set()
     # process amrfinder results
     unique_amrfp_genes = set()
     for index, row in amrfinder_content.iterrows():
@@ -225,7 +222,7 @@ for a in tqdm(amira_outputs):
             continue
         unique_amrfp_genes.add(gene_name)
     # detect presence or absence
-    for g in set(unique_amira_genes.keys()).union(unique_amrfp_genes).union(set(list(unique_amira_no_filtering_genes.keys()))):
+    for g in truth:
         if g not in total_counts:
             total_counts[g] = set()
         if g in unique_amrfp_genes:
@@ -242,14 +239,6 @@ for a in tqdm(amira_outputs):
             pa_data["Val"].append(1)
         else:
             pa_data["Method"].append("Amira")
-            pa_data["Gene"].append(g)
-            pa_data["Val"].append(0)
-        if g in unique_amira_no_filtering_genes:
-            pa_data["Method"].append("Amira --no-filtering")
-            pa_data["Gene"].append(g)
-            pa_data["Val"].append(1)
-        else:
-            pa_data["Method"].append("Amira --no-filtering")
             pa_data["Gene"].append(g)
             pa_data["Val"].append(0)
         total_counts[g].add(sample)

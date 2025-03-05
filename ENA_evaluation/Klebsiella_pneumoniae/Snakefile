@@ -47,7 +47,7 @@ rule run_amrfp_on_flye:
     resources:
         mem_mb=15000
     shell:
-        "mkdir -p {output.outdir} && amrfinder -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
+        "mkdir -p {output.outdir} && amrfinder -d ../2024-01-31.1 -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Klebsiella_pneumoniae"
 
 rule run_amira:
     input:

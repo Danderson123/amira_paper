@@ -37,16 +37,16 @@ mapping = {
     "GCA_027945035.1_ASM2794503v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044225_1.fastq.gz"},
     "GCA_027945055.1_ASM2794505v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044226_1.fastq.gz"},
     "GCA_028551585.1_ASM2855158v1_genomic":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR23044220_1.fastq.gz"},
-    "AUSMDU00010405":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00010405.fastq.gz"},
-    "AUSMDU00015264":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00015264.fastq.gz"},
-    "AUSMDU00021208":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00021208.fastq.gz"},
-    "AUSMDU00031899":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00031899.fastq.gz"},
-    "AUSMDU00031978":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00031978.fastq.gz"},
-    "AUSMDU00032793":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00032793.fastq.gz"},
-    "AUSMDU00036400":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00036400.fastq.gz"},
-    "AUSMDU00040126":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00040126.fastq.gz"},
-    "AUSMDU00055259":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00055259.fastq.gz"},
-    "AUSMDU00062512":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/AUSMDU00062512.fastq.gz"}
+    "AUSMDU00010405":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR32405434_1.fastq.gz"},
+    "AUSMDU00015264":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR32405436_1.fastq.gz"},
+    "AUSMDU00021208":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR32405439_1.fastq.gz"},
+    "AUSMDU00031899":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR32405433_1.fastq.gz"},
+    "AUSMDU00031978":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR32405440_1.fastq.gz"},
+    "AUSMDU00032793":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR32405441_1.fastq.gz"},
+    "AUSMDU00036400":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR32405435_1.fastq.gz"},
+    "AUSMDU00040126":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR32405437_1.fastq.gz"},
+    "AUSMDU00055259":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR32405442_1.fastq.gz"},
+    "AUSMDU00062512":  {"ONT": "amira_paper_data/truth_evaluation/subsampled_nanopore_reads/SRR32405438_1.fastq.gz"}
 }
 
 illumina_mapping = {
@@ -73,16 +73,16 @@ illumina_mapping = {
     "GCA_027945035.1_ASM2794503v1_genomic": "amira_paper_data/truth_evaluation/illumina_reads/SRR22543827",
     "GCA_027945055.1_ASM2794505v1_genomic": "amira_paper_data/truth_evaluation/illumina_reads/SRR22543837",
     "GCA_028551585.1_ASM2855158v1_genomic": "amira_paper_data/truth_evaluation/illumina_reads/SRR22543934",
-    "AUSMDU00010405": "amira_paper_data/truth_evaluation/illumina_reads/AUSMDU00010405",
-    "AUSMDU00015264": "amira_paper_data/truth_evaluation/illumina_reads/AUSMDU00015264",
-    "AUSMDU00021208": "amira_paper_data/truth_evaluation/illumina_reads/AUSMDU00021208",
-    "AUSMDU00031899": "amira_paper_data/truth_evaluation/illumina_reads/AUSMDU00031899",
-    "AUSMDU00031978": "amira_paper_data/truth_evaluation/illumina_reads/AUSMDU00031978",
-    "AUSMDU00032793": "amira_paper_data/truth_evaluation/illumina_reads/AUSMDU00032793",
-    "AUSMDU00036400": "amira_paper_data/truth_evaluation/illumina_reads/AUSMDU00036400",
-    "AUSMDU00040126": "amira_paper_data/truth_evaluation/illumina_reads/AUSMDU00040126",
-    "AUSMDU00055259": "amira_paper_data/truth_evaluation/illumina_reads/AUSMDU00055259",
-    "AUSMDU00062512": "amira_paper_data/truth_evaluation/illumina_reads/AUSMDU00062512"
+    "AUSMDU00010405": "amira_paper_data/truth_evaluation/illumina_reads/SRR15116130",
+    "AUSMDU00015264": "amira_paper_data/truth_evaluation/illumina_reads/SRR14673594",
+    "AUSMDU00021208": "amira_paper_data/truth_evaluation/illumina_reads/SRR15116365",
+    "AUSMDU00031899": "amira_paper_data/truth_evaluation/illumina_reads/SRR15116275",
+    "AUSMDU00031978": "amira_paper_data/truth_evaluation/illumina_reads/SRR15116274",
+    "AUSMDU00032793": "amira_paper_data/truth_evaluation/illumina_reads/SRR15116259",
+    "AUSMDU00036400": "amira_paper_data/truth_evaluation/illumina_reads/SRR15116221",
+    "AUSMDU00040126": "amira_paper_data/truth_evaluation/illumina_reads/SRR15116179",
+    "AUSMDU00055259": "amira_paper_data/truth_evaluation/illumina_reads/SRR28786155",
+    "AUSMDU00062512": "amira_paper_data/truth_evaluation/illumina_reads/SRR32390598"
 }
 
 # Listing samples and appending assembly data
@@ -94,7 +94,7 @@ for sample in SAMPLES:
 # Snakemake rules
 rule all:
     input:
-        os.path.join(stats_output, "sample_violin_results.png")
+        os.path.join(stats_output, "figure_4a.png")
 
 rule run_amira:
     input:
@@ -142,7 +142,7 @@ rule make_truth_json:
     shell:
         """
         python3 software/make_truth_with_minimap.py \
-        {input.assembly} {params.AMR_reference} {output.sample_output}
+        {input.assembly} {params.AMR_reference} {output.sample_output} {threads}
         """
 
 rule unicycler_assemble:
@@ -309,9 +309,10 @@ rule get_stats:
         resfinder=aggregated_resfinder,
         shovill=aggregated_amrfp_shovill,
         amira_no_trim=aggregate_amira_no_trim,
+        truth_alleles="truth_allele_sequences",
         cns=aggregated_cns
     output:
-        os.path.join(stats_output, "sample_violin_results.png")
+        os.path.join(stats_output, "figure_4a.png")
     threads: 1
     resources:
         mem_mb=10000

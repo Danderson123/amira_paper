@@ -3,8 +3,8 @@ import subprocess
 import pandas as pd
 import pysam
 
-def run_minimap2(assembly_file, genes_file, output_file):
-    cmd = f"minimap2 -a -x asm20 --MD -t 12 --eqx {assembly_file} {genes_file} > {output_file}"
+def run_minimap2(assembly_file, genes_file, output_file, cores):
+    cmd = f"minimap2 -a -x asm20 --MD -t {cores} --eqx {assembly_file} {genes_file} > {output_file}"
     subprocess.run(cmd, shell=True, check=True)
 
 def parse_sam(sam_file, similarity_threshold=90.0, length_threshold=95.0):
@@ -191,9 +191,9 @@ def write_gff(filtered_hits, output_file, assembly_file):
             f.write(gff_line)
         f.write(f"##FASTA\n{assembly_content}")
 
-def supplement_with_genes_from_reads(genes_file, nanopore, output_file):
+def supplement_with_genes_from_reads(genes_file, nanopore, output_file, cores):
     # map the reads to the genes
-    cmd = f"minimap2 -a -x map-ont -t 12 --eqx --MD {genes_file} {nanopore} > {output_file}"
+    cmd = f"minimap2 -a -x map-ont -t {cores} --eqx --MD {genes_file} {nanopore} > {output_file}"
     if not os.path.exists(output_file):
         subprocess.run(cmd, shell=True, check=True)
     # import the sam
@@ -218,17 +218,17 @@ def supplement_with_genes_from_reads(genes_file, nanopore, output_file):
             valid_candidates.append(ref)
     return valid_candidates
 
-def process_assemblies(assembly_file, genes_file, output_json, nanopore):
+def process_assemblies(assembly_file, genes_file, output_json, cores, nanopore):
     if not os.path.exists(os.path.dirname(output_json)):
         os.mkdir(os.path.dirname(output_json))
     if assembly_file.endswith('.fasta') or assembly_file.endswith('.fna') or assembly_file.endswith('.fa'):
         output_sam = os.path.join(os.path.dirname(output_json), f"{os.path.basename(assembly_file).replace('.fasta', '').replace('.fna', '').replace('.fa', '')}.sam")
         print(f"Processing {assembly_file}...")
-        run_minimap2(assembly_file, genes_file, output_sam)
+        run_minimap2(assembly_file, genes_file, output_sam, cores)
         hits = parse_sam(output_sam)
         filtered_hits = filter_longest_hits(hits)
         if nanopore is not None:
-            additional_genes = supplement_with_genes_from_reads(genes_file, nanopore, output_sam.replace(".sam", ".supplement.sam"))
+            additional_genes = supplement_with_genes_from_reads(genes_file, nanopore, output_sam.replace(".sam", ".supplement.sam"), cores)
         else:
             additional_genes = []
         if ".json" in output_json:
@@ -243,10 +243,11 @@ if __name__ == "__main__":
     parser.add_argument("assembly_path", help="Assembly in FASTA format.")
     parser.add_argument("genes_file", help="FASTA file of genes to map to the assemblies.")
     parser.add_argument("output_file", help="Output file path for JSON.")
+    parser.add_argument("cores", help="Number of CPUs.")
     parser.add_argument(
             "--nanopore",
             dest="nanopore",
             required=None,
     )
     args = parser.parse_args()
-    process_assemblies(args.assembly_path, args.genes_file, args.output_file, args.nanopore)
+    process_assemblies(args.assembly_path, args.genes_file, args.output_file, args.cores, args.nanopore)

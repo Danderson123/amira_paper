@@ -8,3 +8,4 @@ dependencies:
  - pip
  - snakemake=7.32.4
  - ncbi-amrfinderplus=3.12.8
+ - tqdm=4.67.0
