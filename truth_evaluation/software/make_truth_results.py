@@ -182,6 +182,7 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
             label = labels[m]
             recalls = []
             precisions = []
+            counts = {}
             for sample in truth_results[tech]:
                 # Aggregate true positives, false negatives, and false positives across all genes and samples
                 total_tp = 0
@@ -190,10 +191,11 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
                 if sample not in method[tech]:
                     continue
                     method[tech][sample] = {}
-
+                counts[sample] = {}
                 for gene in set(truth_results[tech][sample]).union(method[tech].get(sample, {})):
                     truth_count = truth_results[tech][sample].get(gene, 0)
                     method_count = method[tech].get(sample, {}).get(gene, 0)
+                    counts[sample][gene] = {"truth": truth_count, label: method_count}
                     # Calculate true positives, false negatives, and false positives
                     tp = min(truth_count, method_count)
                     fn = max(0, truth_count - method_count)
@@ -202,8 +204,6 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
                     total_tp += tp
                     total_fn += fn
                     total_fp += fp
-                    if "ResFinder" in label and fn > 0:
-                        print(sample, gene, truth_count, method_count)
 
                 # Calculate proportions for stacking
                 total_truth_calls = total_tp + total_fn
@@ -215,16 +215,18 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
                 fp_method_proportion = total_fp / total_method_calls if total_method_calls > 0 else 0
                 recalls.append(tp_truth_proportion)
                 precisions.append(tp_method_proportion)
-
-            if len(recalls) != 0:
-                sensitivity = statistics.mean(recalls)
-                fn_prop = 1 - sensitivity
-                specificity = statistics.mean(precisions)
-                fp_prop = 1- specificity
-                print(tech, label, "Recall: ", sensitivity, " Precision: ", specificity, "\n")
-            else:
-                sensitivity = 0
-                specificity = 0
+                print(sample, counts[sample], "\n")
+           # if not len(recalls) == 0:
+            sensitivity = statistics.mean(recalls)
+          #  else:
+        #    sensitivity = 1
+            fn_prop = 1 - sensitivity
+            #if not len(precisions) == 0:
+            specificity = statistics.mean(precisions)
+            #else:
+            #    specificity = 1
+            fp_prop = 1- specificity
+            print(tech, label, "Recall: ", sensitivity, " Precision: ", specificity, "\n")
             # Append aggregated data for plotting
             plot_data.append({
                 "Technology": tech,

@@ -99,7 +99,7 @@ rule all:
 
 rule run_amira:
     input:
-        reads=os.path.join(trimmed_reads, "{sample}.fastq.gz")
+        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
     output:
         sample_output=directory(os.path.join(amira_output, "{sample}"))
     threads: 4
@@ -125,7 +125,7 @@ rule run_amira_no_trim:
     benchmark:
         os.path.join(benchmark_dir, "run_amira_no_trim.{sample}.txt")
     shell:
-        "singularity run amira_v0.7.1.img amira --no-trim --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira_v0.7.1.img amira --debug --output-component-fastqs --no-trim --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule make_truth_json:
     input:
@@ -250,7 +250,7 @@ rule run_amrfp_on_flye:
 
 rule run_resfinder:
     input:
-        reads=os.path.join(trimmed_reads, "{sample}.fastq.gz")
+        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
     output:
         directory(os.path.join("resfinder_results", "{sample}"))
     threads: 1
