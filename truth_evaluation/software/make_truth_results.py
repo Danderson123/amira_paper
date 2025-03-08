@@ -215,7 +215,8 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
                 fp_method_proportion = total_fp / total_method_calls if total_method_calls > 0 else 0
                 recalls.append(tp_truth_proportion)
                 precisions.append(tp_method_proportion)
-                print(sample, counts[sample], "\n")
+                if tech == "r10" and "Unicycler" in label and tp_method_proportion < 1:
+                    print(sample, tp_method_proportion, counts[sample])
            # if not len(recalls) == 0:
             sensitivity = statistics.mean(recalls)
           #  else:
@@ -595,6 +596,10 @@ for s in glob.glob(os.path.join(amira_dir, "*")):
 # compensate for structural variants that we are going to ignore
 if "AUSMDU00021208" in amira_results["r10"]:
     amira_results["r10"]["AUSMDU00021208"][apply_rules("blaTEM-1")] = amira_results["r10"]["AUSMDU00021208"][apply_rules("blaTEM-1")] - 1
+if "AUSMDU00032793" in amira_results["r10"]:
+    amira_results["r10"]["AUSMDU00032793"][apply_rules("sul2")] = amira_results["r10"]["AUSMDU00032793"][apply_rules("sul2")] - 1
+if "AUSMDU00032793" in resfinder_results["r10"]:
+    resfinder_results["r10"]["AUSMDU00032793"][apply_rules("sul2")] = resfinder_results["r10"]["AUSMDU00032793"][apply_rules("sul2")] - 1
 if "GCA_027944615.1_ASM2794461v1_genomic" in amira_results["r9"]:
     amira_results["r9"]["GCA_027944615.1_ASM2794461v1_genomic"][apply_rules("blaTEM-116")] = amira_results["r9"]["GCA_027944615.1_ASM2794461v1_genomic"][apply_rules("blaTEM-116")] - 1
 
