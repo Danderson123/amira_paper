@@ -95,7 +95,8 @@ for sample in SAMPLES:
 # Snakemake rules
 rule all:
     input:
-        os.path.join(stats_output, "figure_4a.png")
+        os.path.join(stats_output, "figure_4a.png"),
+        expand(os.path.join("true_gene_content", "{nanopore_sample}"), nanopore_sample=SAMPLES)
 
 rule run_amira:
     input:
@@ -154,6 +155,18 @@ rule trim_adapters:
         os.path.join(benchmark_dir, "trim_adapters.{sample}.txt")
     shell:
         "porechop_abi -abi -i {input} -o {output}"
+
+rule get_true_genes_in_reads:
+    input:
+        nanopore=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0').replace("subsampled_nanopore_reads", "nanopore_reads"),
+        AMR_reference="AMR_alleles_unified_modified.fa"
+    output:
+        sample_output=directory(os.path.join("true_gene_content", "{sample}"))
+    threads: 4
+    resources: mem_mb=30000, threads=4
+    conda: "envs/make_truth.yaml"
+    shell:
+        "mkdir -p {output.sample_output} && python3 software/get_true_AMR_genes.py --cores {threads} --reads {input.nanopore} --reference {input.AMR_reference} --output {output.sample_output}"
 
 rule unicycler_assemble:
     input:

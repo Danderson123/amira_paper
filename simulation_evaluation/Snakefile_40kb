@@ -48,10 +48,11 @@ rule simulate_assembly:
         os.path.join('simulated_assemblies', "{sample}.fasta")
     threads: 12
     params:
-        allele_file=AMR_allele_file
+        allele_file=AMR_allele_file,
+        seed=seed
     conda: "envs/simulate_assembly.yaml"
     shell:
-        "python3 scripts/simulate_assemblies.py --seed 2025 --cores {threads} --context-fasta {input.context_fasta} --reference-genome {input.reference_genome} --reference-plasmid {input.reference_plasmid} --allele-file {params.allele_file} --output {output}"
+        "python3 scripts/simulate_assemblies.py --seed {params.seed} --cores {threads} --context-fasta {input.context_fasta} --reference-genome {input.reference_genome} --reference-plasmid {input.reference_plasmid} --allele-file {params.allele_file} --output {output}"
 
 rule simulate_r_10_reads:
     input:
@@ -63,9 +64,10 @@ rule simulate_r_10_reads:
     threads: 1
     params:
         sim_depth="{depth}",
-        mean_length=badread_length
+        mean_length=badread_length,
+        seed=seed
     shell:
-        "badread simulate --seed 2025 --length {params.mean_length} --error_model nanopore2023 --qscore_model nanopore2023 --reference {input.assembly} --quantity {params.sim_depth}x > {output}"
+        "badread simulate --seed {params.seed} --length {params.mean_length} --error_model nanopore2023 --qscore_model nanopore2023 --reference {input.assembly} --quantity {params.sim_depth}x > {output}"
 
 rule run_amira:
     input:
@@ -77,7 +79,7 @@ rule run_amira:
         mem_mb=lambda wildcards, attempt: 50000 * attempt, threads=5, runtime=7200
     params:
         panRG="Escherichia.coli.panidx.zip",
-        species="Escherichia_coli"
+        species="Escherichia_coli",
     shell:
         "singularity run amira_v0.7.1.img amira --reads {input.readfile} --output {output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 

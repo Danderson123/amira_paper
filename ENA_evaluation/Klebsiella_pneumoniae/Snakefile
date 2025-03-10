@@ -60,7 +60,7 @@ rule run_amira:
         panRG="Klebsiella.pneumoniae.panidx.zip",
         species="Klebsiella_pneumoniae"
     shell:
-        "singularity run ../amira_v0.7.0.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run ../amira_v0.7.1.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule get_true_gene_content:
     input:

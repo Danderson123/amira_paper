@@ -7,7 +7,7 @@ def run_minimap2(assembly_file, genes_file, output_file, cores):
     cmd = f"minimap2 -a -x asm20 --MD -t {cores} -o {output_file} --eqx {assembly_file} {genes_file}"
     subprocess.run(cmd, shell=True, check=True)
 
-def parse_sam(sam_file, similarity_threshold=90.0, length_threshold=95.0):
+def parse_sam(sam_file, similarity_threshold=90.0, length_threshold=90.0):
     hits = []
     samfile = pysam.AlignmentFile(sam_file, "r")
     for read in samfile.fetch():
