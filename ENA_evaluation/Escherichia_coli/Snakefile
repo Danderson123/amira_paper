@@ -14,10 +14,13 @@ def aggregate_flye_nanopore(wildcards):
     return expand(os.path.join(output_dir, "AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", "{nanopore_sample}"), nanopore_sample=NANOPORE_SAMPLES)
 
 def aggregate_amira(wildcards):
-    return expand(os.path.join(output_dir, "Amira_v0.6.4_output", "{nanopore_sample}"), nanopore_sample=NANOPORE_SAMPLES)
+    return expand(os.path.join(output_dir, "Amira_v0.7.1_output", "{nanopore_sample}"), nanopore_sample=NANOPORE_SAMPLES)
 
 def aggregate_truth(wildcards):
     return expand(os.path.join(output_dir, "true_gene_content", "{nanopore_sample}"), nanopore_sample=NANOPORE_SAMPLES)
+
+if not os.path.exists(os.path.join(output_dir, "trimmed_reads")):
+    os.mkdir(os.path.join(output_dir, "trimmed_reads"))
 
 rule all:
     input:
@@ -25,9 +28,17 @@ rule all:
         aggregate_flye_nanopore,
         aggregate_truth
 
-rule flye_assemble:
+rule trim_adapters:
     input:
         reads=lambda wildcards: os.path.join("nanopore_reads", wildcards.nanopore_sample + ".fastq.gz")
+    output:
+        os.path.join(output_dir, "trimmed_reads", "{nanopore_sample}.fastq.gz")
+    shell:
+        "porechop_abi -abi -i {input.reads} -o {output}"
+
+rule flye_assemble:
+    input:
+        reads=lambda wildcards: os.path.join(output_dir, "trimmed_reads", wildcards.nanopore_sample + ".fastq.gz")
     output:
         directory(os.path.join(output_dir, "flye_v2.9.3_nanopore_only_assemblies", "{nanopore_sample}"))
     threads: 4
@@ -53,14 +64,14 @@ rule run_amira:
     input:
         reads=lambda wildcards: os.path.join("nanopore_reads", wildcards.nanopore_sample + ".fastq.gz")
     output:
-        sample_output=directory(os.path.join(output_dir, "Amira_v0.6.4_output", "{nanopore_sample}"))
+        sample_output=directory(os.path.join(output_dir, "Amira_v0.7.1_output", "{nanopore_sample}"))
     threads: 4
     resources: mem_mb=60000
     params:
         panRG="Escherichia.coli.panidx.zip",
         species="Escherichia_coli"
     shell:
-        "singularity run ../amira_v0.7.1.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run ../amira.8084235.img amira --reads {input.reads} --debug --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule get_true_gene_content:
     input:

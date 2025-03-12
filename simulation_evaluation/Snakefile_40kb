@@ -81,7 +81,7 @@ rule run_amira:
         panRG="Escherichia.coli.panidx.zip",
         species="Escherichia_coli",
     shell:
-        "singularity run amira_v0.7.1.img amira --reads {input.readfile} --output {output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira.8084235.img amira --reads {input.readfile} --output {output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule flye_assemble:
     input:

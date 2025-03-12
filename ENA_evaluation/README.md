@@ -15,8 +15,14 @@ The dependencies for the *K. pneumoniae* evaluation can be installed with:
 ```{bash}
 conda env create -f Klebsiella_pneumoniae/envs/K_pneumoniae_env.yaml && conda activate K_pneumoniae_env
 ```
+The dependencies for the *E. faecium* evaluation can be installed with:
+
+```{bash}
+conda env create -f Enterococcus_faecium/envs/E_faecium_env.yaml && conda activate E_faecium_env
+```
 The pipeline assumes the *E. coli* panRG is located in `Escherichia_coli`. It can be downloaded from [here](https://drive.google.com/file/d/13c_bUXnBEs9iEPPobou7-xEgkz_t08YP/view?usp=sharing).
 The pipeline assumes the *K. pneumoniae* panRG is located in `Klebsiella_pneumoniae`. It can be downloaded from [here](https://drive.google.com/file/d/1DYG3QW3nrQfSckIX9Vjbhbqz5bRd9W3j/view?usp=drive_link).
+The pipeline assumes the *E. faecium* panRG is located in `Enterococcus_faecium`. It can be downloaded from [here](https://drive.google.com/file/d/1AzzFNRbH6VXPj5CX2txlcxhW8AhL9HSh/view?usp=sharing).
 You will also need to install the AMRFinderPlus database.
 
 # Running the *E. coli* evaluation
@@ -43,6 +49,21 @@ cd Klebsiella_pneumoniae && snakemake --cores 12 --use-conda --nolock --rerun-in
 Some samples will fail to assemble so the result plots have to be generated separately. You will need to make a separate conda environment for the plotting dependencies. This can be done with:
 ```{bash}
 conda env create -f envs/plot_results.yaml && conda activate K_pneumoniae_plot_env
+```
+The plots can then be generated with:
+```{bash}
+python3 scripts/make_result_plots.py
+```
+
+# Running the *E. faecium* evaluation
+
+The *E. faecium* evaluation can then be run with:
+```{bash}
+cd Enterococcus_faecium && snakemake --cores 12 --use-conda --nolock --rerun-incomplete --keep-going
+```
+Some samples will fail to assemble so the result plots have to be generated separately. You will need to make a separate conda environment for the plotting dependencies. This can be done with:
+```{bash}
+conda env create -f envs/plot_results.yaml && conda activate E_faecium_plot_env
 ```
 The plots can then be generated with:
 ```{bash}

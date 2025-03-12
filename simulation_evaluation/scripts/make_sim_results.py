@@ -203,7 +203,6 @@ def plot_amr_recall(ax, depths, recalls, lengths, scenario):
 def calculate_gene_accuracy(truth, amira):
     tp = min(truth, amira)
     fn = max(0, truth - amira)
-    fp = max(0, amira-truth)
     return tp / (tp + fn)
 
 def calculate_allele_accuracy_with_mafft(all_seqs, output_dir, true_c_n, amira_c_n):
@@ -621,3 +620,5 @@ for i in range(len(genes_dicts)):
     genes_data[scenario] = (genes_dicts[i], positions_dicts[i], gene_colors)
 
 plot_combined(genes_data, modified_data_list, flye_modified_data_list, 'simulation_results/final_combined_plot.png')
+for depth, similarities in all_similarities_by_depth.items():
+    print(depth, statistics.mean(similarities))
