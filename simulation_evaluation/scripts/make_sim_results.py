@@ -351,7 +351,7 @@ def plot_combined(genes_data, amira_recall_data, flye_recall_data, output_file):
             data=plot_df,
             color=list(plot_df["color"]),
             zorder=3,
-            s=200,
+            s=300,
             marker="x"
         )
 

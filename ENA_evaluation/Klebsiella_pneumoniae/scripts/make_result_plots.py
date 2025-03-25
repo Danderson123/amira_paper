@@ -13,7 +13,7 @@ from matplotlib.patches import Patch
 
 sys.setrecursionlimit(50000)
 
-amira_outputs = glob.glob("evaluation_results/Amira_v0.7.0_output/*/amira_results.tsv")
+amira_outputs = glob.glob("evaluation_results/Amira_v0.8.0_output/*/amira_results.tsv")
 
 def apply_rules(gene):
     gene = gene.replace("'", "")
@@ -198,7 +198,6 @@ for a in tqdm(amira_outputs):
         continue
     if not os.path.exists(amrfinder):
         continue
-    print(sample)
     amira_content = pd.read_csv(a, sep="\t")
     amrfinder_content = pd.read_csv(amrfinder, sep="\t")
     with open(truth_file) as i:
@@ -331,7 +330,7 @@ ax = sns.scatterplot(
     y="Val",
     hue="Method",             # color by method
     size="Samples",           # size by sample count
-    sizes=(50, 1000),         # Increase marker sizes if needed
+    sizes=(50, 2000),         # Increase marker sizes if needed
     edgecolor="black",
     linewidth=1.5,            # Increase the edge width for better contrast
     palette=cb_palette[1:],
@@ -348,11 +347,11 @@ min_samples = scatter_df['Samples'].min()
 max_samples = scatter_df['Samples'].max()
 mid_samples = int((min_samples + max_samples) / 2)
 
-# Define a helper to scale sample counts to marker sizes (using the same mapping as sizes=(100,600))
+# Define a helper to scale sample counts to marker sizes (using the same mapping as sizes=(50,2000))
 def scale_size(s):
     if max_samples == min_samples:
-        return 100
-    return 100 + (600 - 100) * ((s - min_samples) / (max_samples - min_samples))
+        return 50
+    return 50 + (2000 - 50) * ((s - min_samples) / (max_samples - min_samples))
 
 # Create dummy scatter handles for the legend
 size_values = [min_samples, max_samples]

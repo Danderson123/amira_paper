@@ -9,8 +9,9 @@ stats_output = "truth_results"
 copy_numbers_out = "mapped_nanopore_reads"
 benchmark_dir = "benchmarks"
 trimmed_reads = "trimmed_reads"
+raven_dir = "raven_v1.8.3_nanopore_only_assemblies"
 # make the directories
-for d in [amira_output, truth_gff_output, stats_output, amira_output_no_trim, copy_numbers_out, benchmark_dir, trimmed_reads]:
+for d in [amira_output, truth_gff_output, stats_output, amira_output_no_trim, copy_numbers_out, benchmark_dir, trimmed_reads, raven_dir]:
     if not os.path.exists(d):
         os.mkdir(d)
 # specify the sample to nanopore read mapping
@@ -111,7 +112,7 @@ rule run_amira:
     benchmark:
         os.path.join(benchmark_dir, "run_amira.{sample}.txt")
     shell:
-        "singularity run amira.8084235.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira.bfeddba.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule run_amira_no_trim:
     input:
@@ -126,7 +127,7 @@ rule run_amira_no_trim:
     benchmark:
         os.path.join(benchmark_dir, "run_amira_no_trim.{sample}.txt")
     shell:
-        "singularity run amira.8084235.img amira --debug --output-component-fastqs --no-trim --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira.bfeddba.img amira --debug --output-component-fastqs --no-trim --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule make_truth_json:
     input:
@@ -158,7 +159,7 @@ rule trim_adapters:
 
 rule get_true_genes_in_reads:
     input:
-        nanopore=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0').replace("subsampled_nanopore_reads", "nanopore_reads"),
+        nanopore=os.path.join(trimmed_reads, "{sample}.fastq.gz"),
         AMR_reference="AMR_alleles_unified_modified.fa"
     output:
         sample_output=directory(os.path.join("true_gene_content", "{sample}"))
@@ -170,7 +171,8 @@ rule get_true_genes_in_reads:
 
 rule unicycler_assemble:
     input:
-        nanopore=os.path.join(trimmed_reads, "{sample}.fastq.gz"),
+        nanopore=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0'),
+        #nanopore=os.path.join(trimmed_reads, "{sample}.fastq.gz"),
         illumina_1=lambda wildcards: f"{illumina_mapping.get(wildcards.sample, '0')}_1.fastq.gz".replace(' ', ''),
         illumina_2=lambda wildcards: f"{illumina_mapping.get(wildcards.sample, '0')}_2.fastq.gz".replace(' ', ''),
     output:
@@ -186,7 +188,8 @@ rule unicycler_assemble:
 
 rule flye_assemble:
     input:
-        nanopore=os.path.join(trimmed_reads, "{sample}.fastq.gz")
+        nanopore=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0'),
+        #nanopore=os.path.join(trimmed_reads, "{sample}.fastq.gz"),
     output:
         directory(os.path.join("flye_v2.9.3_nanopore_only_assemblies", "{sample}"))
     threads: 4
@@ -197,6 +200,21 @@ rule flye_assemble:
         os.path.join(benchmark_dir, "flye_assemble.{sample}.txt")
     shell:
         "flye -g 5M -o {output} -t {threads} --nano-raw {input}"
+
+rule raven_assemble:
+    input:
+        nanopore=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0'),
+        #nanopore=os.path.join(trimmed_reads, "{sample}.fastq.gz"),
+    output:
+        os.path.join("raven_v1.8.3_nanopore_only_assemblies", "{sample}.fasta")
+    threads: 4
+    resources:
+        mem_mb=100000
+    conda: "envs/raven.yaml"
+    benchmark:
+        os.path.join(benchmark_dir, "raven_assemble.{sample}.txt")
+    shell:
+        "raven -t {threads} {input.nanopore} > {output}"
 
 rule shovill_assemble:
     input:
@@ -261,8 +279,25 @@ rule run_amrfp_on_flye:
     shell:
         "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
 
+rule run_amrfp_on_raven:
+    input:
+        os.path.join("raven_v1.8.3_nanopore_only_assemblies", "{sample}.fasta")
+    output:
+        outdir=directory(os.path.join("AMR_finder_plus_results.raven_v1.8.3_nanopore_only_assemblies", "{sample}")),
+        outfile=os.path.join("AMR_finder_plus_results.raven_v1.8.3_nanopore_only_assemblies", "{sample}", "AMR_finder_plus_results.tsv")
+    threads: 4
+    resources:
+        mem_mb=15000
+    params:
+        amrfinder_db="2024-01-31.1"
+    benchmark:
+        os.path.join(benchmark_dir, "run_amrfp_on_raven.{sample}.txt")
+    shell:
+        "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input} -o {output.outfile} -t {threads} --plus --organism Escherichia"
+
 rule run_resfinder:
     input:
+        #reads=os.path.join(trimmed_reads, "{sample}.fastq.gz")
         reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
     output:
         directory(os.path.join("resfinder_results", "{sample}"))
@@ -292,13 +327,17 @@ def aggregated_amrfp_unicycler(wildcards):
 def aggregated_amrfp_shovill(wildcards):
     return expand(os.path.join("AMR_finder_plus_results.shovill_v1.1.0_illumina_only_assemblies", "{sample}", "AMR_finder_plus_results.tsv"), sample=SAMPLES)
 
+def aggregated_amrfp_raven(wildcards):
+    return expand(os.path.join("AMR_finder_plus_results.raven_v1.8.3_nanopore_only_assemblies", "{sample}", "AMR_finder_plus_results.tsv"), sample=SAMPLES)
+
 def aggregated_resfinder(wildcards):
     return expand(os.path.join("resfinder_results", "{sample}"), sample=SAMPLES)
 
 rule estimate_cellular_copy_numbers:
     input:
         assembly=lambda wildcards: mapping.get(wildcards.sample, {}).get('assembly', '0'),
-        reads=os.path.join(trimmed_reads, "{sample}.fastq.gz")
+        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+        #reads=os.path.join(trimmed_reads, "{sample}.fastq.gz"),
     output:
         os.path.join(copy_numbers_out, "{sample}.json")
     threads: 12
@@ -328,6 +367,7 @@ rule get_stats:
         truth=aggregate_truth_gffs,
         amira=aggregate_amira,
         flye=aggregated_amrfp_flye,
+        raven=aggregated_amrfp_raven,
         unicycler=aggregated_amrfp_unicycler,
         resfinder=aggregated_resfinder,
         shovill=aggregated_amrfp_shovill,
@@ -342,4 +382,4 @@ rule get_stats:
     params:
         AMR_reference="AMR_alleles_unified.fa"
     shell:
-        "python3 /hps/nobackup/iqbal/dander/amira_paper_latest/truth_evaluation/software/make_truth_results.py"
+        "python3 software/make_truth_results.py"

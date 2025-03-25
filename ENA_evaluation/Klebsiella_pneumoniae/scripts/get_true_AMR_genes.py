@@ -10,7 +10,7 @@ parser.add_argument("--output", dest="output", required=True)
 parser.add_argument("--cores", dest="cores", required=True)
 args = parser.parse_args()
 
-def supplement_with_genes_from_reads(genes_file, nanopore, output_file, cores, similarity_threshold=90.0, length_threshold=95.0):
+def supplement_with_genes_from_reads(genes_file, nanopore, output_file, cores, similarity_threshold=90.0, length_threshold=90.0):
     # map the reads to the genes
     cmd = f"minimap2 -a -x map-ont -t {cores} --eqx --MD {genes_file} {nanopore} > {output_file}"
     if not os.path.exists(output_file):
