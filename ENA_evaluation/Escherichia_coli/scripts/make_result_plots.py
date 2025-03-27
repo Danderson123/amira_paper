@@ -198,7 +198,6 @@ for a in tqdm(amira_outputs):
         continue
     if not os.path.exists(amrfinder):
         continue
-    print(sample)
     amira_content = pd.read_csv(a, sep="\t")
     amrfinder_content = pd.read_csv(amrfinder, sep="\t")
     with open(truth_file) as i:

@@ -21,8 +21,8 @@ def aggregate_truth(wildcards):
 
 rule all:
     input:
-        aggregate_amira,
-        aggregate_flye_nanopore,
+        #aggregate_amira,
+        #aggregate_flye_nanopore,
         aggregate_truth
 
 rule flye_assemble:
@@ -32,7 +32,8 @@ rule flye_assemble:
         directory(os.path.join(output_dir, "flye_v2.9.3_nanopore_only_assemblies", "{nanopore_sample}"))
     threads: 4
     resources:
-        mem_mb=60000
+        mem_mb=60000,
+        runtime=240
     conda: "envs/flye.yaml"
     shell:
         "flye -g 5M -o {output} -t {threads} --nano-raw {input}"
@@ -55,7 +56,7 @@ rule run_amira:
     output:
         sample_output=directory(os.path.join(output_dir, "Amira_v0.8.0_output", "{nanopore_sample}"))
     threads: 4
-    resources: mem_mb=60000
+    resources: mem_mb=60000, runtime=240
     params:
         panRG="Klebsiella.pneumoniae.panidx.zip",
         species="Klebsiella_pneumoniae"
@@ -65,11 +66,12 @@ rule run_amira:
 rule get_true_gene_content:
     input:
         reads=lambda wildcards: os.path.join("nanopore_reads", wildcards.nanopore_sample + ".fastq.gz"),
-        AMR_reference="AMR_alleles_unified.fa"
+        AMR_reference="AMR_alleles_unified.fa",
+        core_genes="core_genes.fasta"
     output:
         sample_output=directory(os.path.join(output_dir, "true_gene_content", "{nanopore_sample}"))
-    threads: 4
-    resources: mem_mb=30000, threads=4
+    threads: 1
+    resources: mem_mb=30000, threads=1
     conda: "envs/make_truth.yaml"
     shell:
-        "mkdir -p {output.sample_output} && python3 scripts/get_true_AMR_genes.py --cores {threads} --reads {input.reads} --reference {input.AMR_reference} --output {output.sample_output}"
+        "mkdir -p {output.sample_output} && python3 scripts/get_true_AMR_genes.py --cores {threads} --reads {input.reads} --reference {input.AMR_reference} --output {output.sample_output} --core-genes {input.core_genes}"

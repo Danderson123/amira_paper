@@ -404,8 +404,8 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
     all_handles = tech_handles + method_handles
     ax.legend(handles=all_handles, loc='lower right', fontsize=20, title_fontsize=20, frameon=True)
      # Configure plot
-    ax.set_xlabel("Recall", fontsize=20)
-    ax.set_ylabel("Precision", fontsize=20)
+    ax.set_xlabel("Genomic copy number recall", fontsize=20)
+    ax.set_ylabel("Genomic copy number precision", fontsize=20)
     ax.set_xlim([0.69, 1.01])
     ax.set_ylim([0.69, 1.01])
     ax.xaxis.set_major_locator(MultipleLocator(0.05))
@@ -423,6 +423,8 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
 
 def print_single_and_multicopy_stats(truth_results, assembler_results, tools):
     print("\n===== Mean Recall and Precision by Tech, Tool, and Copy Type =====")
+    all_precision_data = {status: {tool: [] for tool in tools} for status in ["Single", "Multi"]}
+    all_recall_data = {status: {tool: [] for tool in tools} for status in ["Single", "Multi"]}
     for tech in ["r9", "r10"]:
         precision_data = {status: {tool: [] for tool in tools} for status in ["Single", "Multi"]}
         recall_data = {status: {tool: [] for tool in tools} for status in ["Single", "Multi"]}
@@ -445,12 +447,21 @@ def print_single_and_multicopy_stats(truth_results, assembler_results, tools):
                     recall_data[status][tool_label].append(tp_truth_proportion)
                     precision_data[status][tool_label].append(tp_method_proportion)
 
+                    all_recall_data[status][tool_label].append(tp_truth_proportion)
+                    all_precision_data[status][tool_label].append(tp_method_proportion)
+
         for status in ["Single", "Multi"]:
             print(f"\nTech: {tech.upper()}, Gene Type: {status}")
             for tool in tools:
                 mean_recall = np.mean(recall_data[status][tool]) * 100 if recall_data[status][tool] else 0
                 mean_precision = np.mean(precision_data[status][tool]) * 100 if precision_data[status][tool] else 0
                 print(f"  {tool:18s} | Recall: {mean_recall:6.2f}% | Precision: {mean_precision:6.2f}%")
+    for status in ["Single", "Multi"]:
+        print(f"\nTech: Aggregated, Gene Type: {status}")
+        for tool in tools:
+            mean_recall = np.mean(all_recall_data[status][tool]) * 100 if all_recall_data[status][tool] else 0
+            mean_precision = np.mean(all_precision_data[status][tool]) * 100 if all_precision_data[status][tool] else 0
+            print(f"  {tool:18s} | Recall: {mean_recall:6.2f}% | Precision: {mean_precision:6.2f}%")
 
 def plot_cn_heatmap(truth_results, assembler_results, output_prefix):
     import pandas as pd
@@ -613,6 +624,7 @@ def plot_nucleotide_results_violin(similarities, output_file):
     for method_name, tech_dict in similarities.items():
         for tech in ["9.4.1", "10.4"]:
             data = tech_dict.get(tech, [])
+            tech = "R" + tech
             for value in data:
                 combined_data.append({
                     "Method": method_name,
@@ -644,22 +656,24 @@ def plot_nucleotide_results_violin(similarities, output_file):
         inner="quartile",
         linewidth=1.5,
         palette="pastel",
-        cut=0,
-        color="#af8dc3"
+        cut=0
     )
 
     # Add stripplot over violins for individual points
-    sns.swarmplot(
+    sns.stripplot(
         x="Method Label",
         y="Allele Accuracy",
         hue="Technology",
         data=df,
+        dodge=True,
+        jitter=True,
         marker='o',
         edgecolor='black',
         linewidth=1,
         alpha=1,
-        size=6,
+        size=10,
         palette="pastel",
+        legend=False
     )
     # Styling
     plt.ylabel("Allele Accuracy", fontsize=20, labelpad=15)
@@ -674,7 +688,7 @@ def plot_nucleotide_results_violin(similarities, output_file):
     ax.spines['bottom'].set_linewidth(0.5)
     ax.grid(axis="y", linestyle="--", alpha=0.7, zorder=1)
     ax.grid(axis="x", visible=False)
-    ax.legend().set_visible(False)
+    ax.legend(loc='center right', fontsize=20, title_fontsize=20, frameon=True)
     plt.tight_layout()
     plt.savefig(output_file, dpi=900)
     plt.savefig(output_file.replace(".png", ".pdf"))
@@ -916,9 +930,9 @@ for s in tqdm(samples):
 #plot_nucleotide_results(all_similarities, os.path.join(output_dir, "nucleotide_accuracies.png"))
 plot_nucleotide_results_violin({
                             "Amira": all_similarities,
-                            "Flye\nAMRFP": calculate_assembler_accuracies("flye_v2.9.3_nanopore_only"),
-                            "Raven\nAMRFP": calculate_assembler_accuracies("raven_v1.8.3_nanopore_only"),
-                            "Unicycler\nAMRFP": calculate_assembler_accuracies("unicycler_v0.5.0_hybrid")
+                            "Flye AMRFP": calculate_assembler_accuracies("flye_v2.9.3_nanopore_only"),
+                            "Raven AMRFP": calculate_assembler_accuracies("raven_v1.8.3_nanopore_only"),
+                            "Unicycler AMRFP": calculate_assembler_accuracies("unicycler_v0.5.0_hybrid")
                             },
                             os.path.join(output_dir, "figure_4c.png"))
 plot_copy_numbers(all_copy_number_tuples, os.path.join(output_dir, "figure_4b.png"))

@@ -29,7 +29,7 @@ for row in flye_stats:
     per_sample_runtime[row[0]] = row[1]
     per_sample_RAM[row[0]] = row[2]
 for row in amrfp_flye_stats:
-    per_sample_runtime[row[0]] = row[1]
+    per_sample_runtime[row[0]] += row[1]
     per_sample_RAM[row[0]] = max(row[2], per_sample_RAM[row[0]])
 print(f"Flye + AMRFP mean runtime: {statistics.mean(list(per_sample_runtime.values()))} seconds, minimum: {min(list(per_sample_runtime.values()))}, maximum: {max(list(per_sample_runtime.values()))}")
 print(f"Flye + AMRFP mean RAM: {statistics.mean(list(per_sample_RAM.values()))} MB, minimum: {min(list(per_sample_RAM.values()))}, maximum: {max(list(per_sample_RAM.values()))}\n")

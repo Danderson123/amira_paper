@@ -1,0 +1,12 @@
+name: E_faecium_env
+channels:
+ - bioconda
+ - conda-forge
+ - nodefaults
+dependencies:
+ - python=3.10.14
+ - pip
+ - snakemake=7.32.4
+ - ncbi-amrfinderplus=3.12.8
+ - tqdm=4.67.0
+ - porechop_abi=0.5.0

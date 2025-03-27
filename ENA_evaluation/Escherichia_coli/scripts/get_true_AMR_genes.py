@@ -2,15 +2,17 @@ import subprocess
 import os
 import argparse
 import pysam
+import statistics
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--reads", dest="reads", required=True)
 parser.add_argument("--reference", dest="reference", required=True)
+parser.add_argument("--core-genes", dest="core_genes", required=True)
 parser.add_argument("--output", dest="output", required=True)
 parser.add_argument("--cores", dest="cores", required=True)
 args = parser.parse_args()
 
-def supplement_with_genes_from_reads(genes_file, nanopore, output_file, cores, similarity_threshold=90.0, length_threshold=90.0):
+def supplement_with_genes_from_reads(genes_file, nanopore, output_file, cores, mean_depth, similarity_threshold=90.0, length_threshold=90.0):
     # map the reads to the genes
     cmd = f"minimap2 -a -x map-ont -t {cores} --eqx --MD {genes_file} {nanopore} > {output_file}"
     if not os.path.exists(output_file):
@@ -40,7 +42,7 @@ def supplement_with_genes_from_reads(genes_file, nanopore, output_file, cores, s
                     proportion_reference_covered[read.reference_name] = set()
                 proportion_reference_covered[read.reference_name].add(read.query_name)
     for ref in proportion_reference_covered:
-        if len(proportion_reference_covered[ref]) >= 5:
+        if len(proportion_reference_covered[ref]) >= mean_depth * 0.2:
             valid_candidates.append(ref)
     return valid_candidates
 
@@ -206,8 +208,53 @@ def apply_rules(gene):
         gene = "ant(6)-I"
     return gene
 
+def samtools_get_mean_depth(bam_file):
+    # Run samtools coverage and capture output
+    result = subprocess.run(
+        ["samtools", "coverage", bam_file],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=True,
+    )
+    # read the output
+    mean_depth_per_contig = {}
+    for line in result.stdout.strip().split("\n"):
+        if line.startswith("#"):
+            continue
+        rname, startpos, endpos, numreads, covbases, coverage, meandepth, meanbaseq, meanmapqs = (
+            line.split("\t")
+        )
+        if rname not in mean_depth_per_contig:
+            mean_depth_per_contig[rname] = 0
+        if float(meandepth) > mean_depth_per_contig[rname]:
+            mean_depth_per_contig[rname] = float(meandepth)
+    return mean_depth_per_contig
+
+def get_core_gene_mean_depth(bam_file, core_gene_file, read_path, cores):
+    # map the reads to the core genes
+    map_command = f"minimap2 -x map-ont -a --MD --secondary=no -t {cores} "
+    map_command += f"-o {bam_file.replace('.bam', '.sam')} "
+    map_command += f"{core_gene_file} {read_path} && "
+    map_command += (
+        f"samtools sort -@ {cores} {bam_file.replace('.bam', '.sam')} > "
+    )
+    map_command += f"{bam_file} && "
+    map_command += f"samtools index {bam_file}"
+    subprocess.run(map_command, shell=True, check=True)
+    # get the mean depth across each core gene
+    mean_depth_per_core_gene = samtools_get_mean_depth(bam_file)
+    os.remove(bam_file.replace('.bam', '.sam'))
+    os.remove(bam_file)
+    os.remove(bam_file + ".bai")
+    return statistics.mean(list(mean_depth_per_core_gene.values()))
+
+# define the output sam
 output_sam = os.path.join(args.output, f"{os.path.basename(args.reads).replace('.fastq.gz', '').replace('.gastq', '')}.sam")
-hits = supplement_with_genes_from_reads(args.reference, args.reads, output_sam, args.cores)
+# get the mean depth across core genes
+mean_depth = get_core_gene_mean_depth(output_sam.replace(".sam", ".core_genes.bam"), args.core_genes, args.reads, args.cores)
+# call genes found in the reads
+hits = supplement_with_genes_from_reads(args.reference, args.reads, output_sam, args.cores, mean_depth)
 present_genes = set([apply_rules(h.split(";")[1].split(".NG_")[0]) for h in hits])
 outfile = os.path.join(args.output, "present_genes.txt")
 with open(outfile, "w") as o:
