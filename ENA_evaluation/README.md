@@ -1,14 +1,14 @@
 
 # Overview
 
-Pipelines to run Amira, Amira `--no-filtering` and AMRFinderPlus with Flye on a large number of *E. coli* and *K. pneumoniae* reads in the ENA. 
+Pipelines to run Amira and AMRFinderPlus with Flye on a large number of *E. coli*, *K. pneumoniae* and *E. faceium" samples with long reads from the ENA. 
 
 # Installation
 
-The pipeline assumes the Amira singularity container is available in the directory and is called `amira_v0.7.1.img`. This can be installed [here](https://github.com/Danderson123/amira). You also need to have conda installed.
+The pipeline assumes the Amira singularity container is available in the directory and is called `amira_v0.8.0.img`. This can be installed [here](https://github.com/Danderson123/amira). You also need to have conda installed.
 The dependencies for the *E. coli* evaluation can be installed with:
 ```{bash}
-onda env create -f Escherichia_coli/envs/E_coli_env.yaml && conda activate E_coli_env
+conda env create -f Escherichia_coli/envs/E_coli_env.yaml && conda activate E_coli_env
 ```
 The dependencies for the *K. pneumoniae* evaluation can be installed with:
 
@@ -29,7 +29,7 @@ You will also need to install the AMRFinderPlus database.
 
 The *E. coli* evaluation can then be run with:
 ```{bash}
-cd Escherichia_coli && snakemake --cores 12 --use-conda --nolock --rerun-incomplete --keep-going
+cd Escherichia_coli && python3 scripts/download_reads.py && snakemake --cores 12 --use-conda --nolock --rerun-incomplete --keep-going
 ```
 Some samples will fail to assemble so the result plots have to be generated separately. You will need to make a separate conda environment for the plotting dependencies. This can be done with:
 ```{bash}
@@ -44,7 +44,7 @@ python3 scripts/make_result_plots.py
 
 The *K. pneumoniae* evaluation can then be run with:
 ```{bash}
-cd Klebsiella_pneumoniae && snakemake --cores 12 --use-conda --nolock --rerun-incomplete --keep-going
+cd Klebsiella_pneumoniae && python3 scripts/download_reads.py && snakemake --cores 12 --use-conda --nolock --rerun-incomplete --keep-going
 ```
 Some samples will fail to assemble so the result plots have to be generated separately. You will need to make a separate conda environment for the plotting dependencies. This can be done with:
 ```{bash}
@@ -59,7 +59,7 @@ python3 scripts/make_result_plots.py
 
 The *E. faecium* evaluation can then be run with:
 ```{bash}
-cd Enterococcus_faecium && snakemake --cores 12 --use-conda --nolock --rerun-incomplete --keep-going
+cd Enterococcus_faecium && python3 scripts/download_reads.py && snakemake --cores 12 --use-conda --nolock --rerun-incomplete --keep-going
 ```
 Some samples will fail to assemble so the result plots have to be generated separately. You will need to make a separate conda environment for the plotting dependencies. This can be done with:
 ```{bash}

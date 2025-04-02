@@ -73,7 +73,7 @@ rule get_true_gene_content:
     output:
         sample_output=directory(os.path.join(output_dir, "true_gene_content", "{nanopore_sample}"))
     threads: 1
-    resources: mem_mb=30000, threads=1
+    resources: mem_mb=30000, threads=1, runtime=60
     conda: "envs/make_truth.yaml"
     shell:
         "mkdir -p {output.sample_output} && python3 scripts/get_true_AMR_genes.py --cores {threads} --reads {input.reads} --reference {input.AMR_reference} --output {output.sample_output} --core-genes {input.core_genes}"

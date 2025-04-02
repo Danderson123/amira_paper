@@ -202,6 +202,7 @@ for r in allele_rows:
 total_counts = {}
 pa_data = {"Method": [], "Gene": [], "Val": []}
 missing_data = {"sample": [], "gene": [], "component": []}
+
 for a in tqdm(amira_outputs):
     sample = os.path.basename(os.path.dirname(a))
     amrfinder = os.path.join("evaluation_results/AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", sample, "AMR_finder_plus_results.gff")
@@ -319,7 +320,7 @@ cat_to_num = {cat: i for i, cat in enumerate(methods)}
 # Adjust the jitter amplitude (here ±0.1) as needed
 scatter_df['x_jitter'] = scatter_df['Method'].map(cat_to_num) + np.random.uniform(-0.25, 0.25, size=len(scatter_df))
 
-plt.figure(figsize=(12.6, 12))
+plt.figure(figsize=(10, 12))
 cb_palette = sns.color_palette("viridis", 4)
 
 # Draw the boxplot first (with lower zorder)
@@ -406,7 +407,7 @@ plt.close()
 
 print("Mean recall for each method:")
 print(data_df.mean(axis=1), data_df.std(axis=1))
-
+print(data_df)
 # Identify genes that occur in only one sample
 single_sample_genes = [gene for gene in data_df.columns if len(total_counts[gene]) == 1]
 

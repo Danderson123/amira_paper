@@ -1,11 +1,7 @@
 from tqdm import tqdm
 import subprocess
 import os
-import pandas as pd
 import requests
-
-# Load the input data
-data = pd.read_csv("scripts/read_run_taxon_links.taxid_1352.tsv", sep="\t")
 
 # Directories and tracking variables
 failed = []
@@ -14,19 +10,13 @@ success = []
 if not os.path.exists("nanopore_reads"):
     os.mkdir("nanopore_reads")
 
-nanopore_accessions = []
-
-# Filter for nanopore-related sequencing runs
-for index, row in data.iterrows():
-    description = row["description"].lower()
-    if any(s in description for s in {"promethion", "minion", "nanopore", "ont", "pacbio"}):
-        nanopore_accessions.append(row["run_accession"])
+with open("E_faecium_nanopore_accessions.txt") as i:
+    nanopore_accessions = i.read().split("\n")
 
 # Function to search ENA and retrieve fastq file link
 def get_fastq_links(accession):
     url = f"https://www.ebi.ac.uk/ena/portal/api/filereport?accession={accession}&result=read_run&fields=fastq_ftp"
     response = requests.get(url)
-    
     if response.status_code == 200:
         lines = response.text.strip().split("\n")
         if len(lines) > 1:  # Skip header

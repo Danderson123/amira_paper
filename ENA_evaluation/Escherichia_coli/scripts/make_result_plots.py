@@ -307,7 +307,7 @@ cat_to_num = {cat: i for i, cat in enumerate(methods)}
 # Adjust the jitter amplitude (here ±0.1) as needed
 scatter_df['x_jitter'] = scatter_df['Method'].map(cat_to_num) + np.random.uniform(-0.25, 0.25, size=len(scatter_df))
 
-plt.figure(figsize=(12.6, 12))
+plt.figure(figsize=(10, 12))
 cb_palette = sns.color_palette("viridis", 4)
 
 # Draw the boxplot first (with lower zorder)
