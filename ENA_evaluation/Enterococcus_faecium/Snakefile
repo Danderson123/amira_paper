@@ -63,7 +63,7 @@ rule run_amira:
         panRG="Enterococcus.faecium.panidx.zip",
         species="Enterococcus_faecium"
     shell:
-        "singularity run ../amira.bfeddba.img amira --reads {input.reads} --debug --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run ../amira.img amira --reads {input.reads} --debug --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule get_true_gene_content:
     input:

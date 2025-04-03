@@ -112,7 +112,7 @@ rule run_amira:
     benchmark:
         os.path.join(benchmark_dir, "run_amira.{sample}.txt")
     shell:
-        "singularity run amira.bfeddba.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule run_amira_no_trim:
     input:
