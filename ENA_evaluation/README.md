@@ -5,7 +5,7 @@ Pipelines to run Amira and AMRFinderPlus with Flye on a large number of *E. coli
 
 # Installation
 
-The pipeline assumes the Amira singularity container is available in the directory and is called `amira_v0.8.0.img`. This can be installed [here](https://github.com/Danderson123/amira). You also need to have conda installed.
+The pipeline assumes the Amira singularity container is available in the directory and is called `amira.img`. This can be installed [here](https://github.com/Danderson123/amira). You also need to have conda installed.
 The dependencies for the *E. coli* evaluation can be installed with:
 ```{bash}
 conda env create -f Escherichia_coli/envs/E_coli_env.yaml && conda activate E_coli_env
