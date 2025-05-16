@@ -1,7 +1,7 @@
 
 # Overview
 
-Pipelines to run Amira and AMRFinderPlus with Flye on a large number of *E. coli*, *K. pneumoniae* and *E. faceium" samples with long reads from the ENA.
+Pipelines to run Amira and AMRFinderPlus with Flye on a large number of *E. coli*, *K. pneumoniae* and *E. faceium* samples with long reads from the ENA.
 
 # Installation
 
