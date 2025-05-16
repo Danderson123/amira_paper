@@ -366,7 +366,7 @@ def plot_combined(genes_data, amira_recall_data, flye_recall_data, output_file):
             ax2.set_xticks(xticks_positions)
             ax2.set_xticklabels([])
         if scenario == 4:
-            ax2.set_ylabel("AMR gene recall")
+            ax2.set_ylabel("Genomic-copy-number recall")
         # Adjust aesthetics for plots
         ax1.spines['left'].set_visible(False)
         ax1.spines['right'].set_visible(False)
@@ -532,7 +532,7 @@ for s in tqdm(scenario):
                     amira_nucleotide_sequences[gene_name] = []
                     amira_copy_numbers[gene_name] = []
                 amira_nucleotide_sequences[gene_name].append(f">{gene_name}_amira\n{seq}")
-                amira_copy_numbers[gene_name].append(row["Approximate copy number"])
+                amira_copy_numbers[gene_name].append(row["Approximate cellular copy number"])
             # Calculate the recall for each gene
             gene_recalls_amira = []
             for g in set(list(amira_counts.keys()) + list(truth_counts.keys())):

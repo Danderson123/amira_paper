@@ -171,134 +171,11 @@ def process_resfinder_results(resfinder_files, reference_genes):
             resfinder_results[tech][sample][cleaned_gene] += 1
     return resfinder_results
 
-def old_plot_recall_and_precision(truth_results, assembler_results, output):
-    # Initialize a list to collect data for plotting
-    plot_data = []
-    labels = ["Amira", "Flye\nAMRFP", "Raven\nAMRFP", "ResFinder", "Unicycler\nAMRFP"]
-
-    for tech in ["r9", "r10"]:
-        for m, method in enumerate(assembler_results):
-            label = labels[m]
-            recalls = []
-            precisions = []
-            counts = {}
-            for sample in truth_results[tech]:
-                # Aggregate true positives, false negatives, and false positives across all genes and samples
-                total_tp = 0
-                total_fn = 0
-                total_fp = 0
-                if sample not in method[tech]:
-                    continue
-                    method[tech][sample] = {}
-                counts[sample] = {}
-                for gene in set(truth_results[tech][sample]).union(method[tech].get(sample, {})):
-                    truth_count = truth_results[tech][sample].get(gene, 0)
-                    method_count = method[tech].get(sample, {}).get(gene, 0)
-                    counts[sample][gene] = {"truth": truth_count, label: method_count}
-                    # Calculate true positives, false negatives, and false positives
-                    tp = min(truth_count, method_count)
-                    fn = max(0, truth_count - method_count)
-                    fp = max(0, method_count - truth_count)
-                    # Accumulate totals
-                    total_tp += tp
-                    total_fn += fn
-                    total_fp += fp
-
-                # Calculate proportions for stacking
-                total_truth_calls = total_tp + total_fn
-                total_method_calls = total_tp + total_fp
-
-                tp_truth_proportion = total_tp / total_truth_calls if total_truth_calls > 0 else 0
-                fn_truth_proportion = total_fn / total_truth_calls if total_truth_calls > 0 else 0
-                tp_method_proportion = total_tp / total_method_calls if total_method_calls > 0 else 0
-                fp_method_proportion = total_fp / total_method_calls if total_method_calls > 0 else 0
-                recalls.append(tp_truth_proportion)
-                precisions.append(tp_method_proportion)
-            sensitivity = statistics.mean(recalls)
-            fn_prop = 1 - sensitivity
-            specificity = statistics.mean(precisions)
-            fp_prop = 1- specificity
-            print(tech, label, "Recall: ", sensitivity, " Precision: ", specificity, "\n")
-            # Append aggregated data for plotting
-            plot_data.append({
-                "Technology": tech,
-                "Method": label,
-                "True Positive Proportion (Truth)": sensitivity,
-                "False Negative Proportion (Truth)": fn_prop,
-                "True Positive Proportion (Method)": specificity,
-                "False Positive Proportion (Method)": fp_prop
-            })
-
-    # Convert the collected data into a DataFrame for plotting
-    df = pd.DataFrame(plot_data)
-    plt.rcParams.update({'font.family': 'sans-serif', 'font.size': 16})
-
-    # Create subplots with two rows for r9 and r10
-    fig, axes = plt.subplots(2, 2, figsize=(12, 24), sharey=True, sharex=True)
-
-    for row, proportion_type in enumerate([
-        ["True Positive Proportion (Truth)", "False Negative Proportion (Truth)"],
-        ["True Positive Proportion (Method)", "False Positive Proportion (Method)"]
-    ]):
-        for col, tech in enumerate(["r9", "r10"]):
-            ax = axes[row, col]
-
-            tech_data = df[df["Technology"] == tech]
-            methods = tech_data["Method"]
-            prop1_values = tech_data[proportion_type[0]]
-            prop2_values = tech_data[proportion_type[1]]
-
-            # Plot stacked bars with distinct colors for TP, FN, and FP
-            color_tp = "#440d54"  # Dark purple for TP
-            color_fn = "#fee724"  # Yellow for FN
-            color_fp = "#35b879"  # Green for FP
-
-            if "False Negative" in proportion_type[1]:
-                ax.bar(methods, prop1_values, label=proportion_type[0], color=color_tp, zorder=2)
-                ax.bar(methods, prop2_values, bottom=prop1_values, label=proportion_type[1], color=color_fn, zorder=2)
-            else:
-                ax.bar(methods, prop1_values, label=proportion_type[0], color=color_tp, zorder=2)
-                ax.bar(methods, prop2_values, bottom=prop1_values, label=proportion_type[1], color=color_fp, zorder=2)
-
-            # Set titles and labels
-            row_title = "recall" if row == 0 else "precision"
-            if tech == "r9":
-                ax.set_title(f"R9.4.1 {row_title}", fontsize=16)
-            if tech == "r10":
-                ax.set_title(f"R10.4 {row_title}", fontsize=16)
-            if row == 1:
-                ax.set_xlabel("Method", fontsize=16)
-            if col == 0:
-                ax.set_ylabel("Proportion", fontsize=16)
-            ax.set_ylim([0.7, 1])
-            # Remove y-axis line and vertical grid lines
-            ax.spines['left'].set_visible(True)
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
-            ax.spines['bottom'].set_linewidth(0.5)
-            ax.grid(axis="y", linestyle="--", alpha=0.7, zorder=1)
-            ax.grid(axis="x", visible=False)
-            # Set y-ticks frequency to 0.05
-            ax.yaxis.set_major_locator(MultipleLocator(0.05))
-
-    # Add a single legend for the entire figure
-    handles = [
-        plt.Line2D([0], [0], color=color_tp, lw=10, label="True Positive"),
-        plt.Line2D([0], [0], color=color_fn, lw=10, label="False Negative"),
-        plt.Line2D([0], [0], color=color_fp, lw=10, label="False Positive")
-    ]
-    fig.legend(handles=handles, loc="center left", fontsize=16, bbox_to_anchor=(1.005, 0.5), frameon=False)
-
-    # Adjust layout and save the plot
-    plt.tight_layout()
-    plt.savefig(output, dpi=600)
-    plt.savefig(output.replace(".png", ".pdf"))
-
 def plot_recall_and_precision(truth_results, assembler_results, output):
     # Initialize a list to collect data for plotting
     plot_data = []
     labels = ["Amira", "Flye AMRFP", "Raven AMRFP", "ResFinder", "Unicycler AMRFP"]
-
+    total = {l: [] for l in labels}
     for tech in ["r9", "r10"]:
         for m, method in enumerate(assembler_results):
             label = labels[m]
@@ -336,7 +213,10 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
                 tp_method_proportion = total_tp / total_method_calls if total_method_calls > 0 else 0
                 fp_method_proportion = total_fp / total_method_calls if total_method_calls > 0 else 0
                 recalls.append(tp_truth_proportion)
+                if "Amira" in label and tp_truth_proportion < 1:
+                    print(sample, tech, truth_results[tech][sample], method[tech][sample], [k for k in truth_results[tech][sample] if k not in method[tech][sample]])
                 precisions.append(tp_method_proportion)
+            total[label] += precisions
             sensitivity = statistics.mean(recalls)
             fn_prop = 1 - sensitivity
             specificity = statistics.mean(precisions)
@@ -363,10 +243,10 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
     viridis = plt.cm.get_cmap("viridis")
     palette = [viridis(i) for i in [0.0, 0.25, 0.5, 0.75, 1.0][::-1]]  # 5 well-separated colors
     methods = df["Method"].unique()
-    techs = ["R9.4.1", "R10.4"]
+    techs = ["R9.4.1", "R10.4.1"]
 
     # Assign color to method, shape to technology
-    marker_shapes = {"R9.4.1": "d", "R10.4": "o"}
+    marker_shapes = {"R9.4.1": "d", "R10.4.1": "o"}
     method_colors = {method: palette[i % len(palette)] for i, method in enumerate(methods)}
 
     for _, row in df.iterrows():
@@ -374,7 +254,7 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
         if tech == "r9":
             tech = "R9.4.1"
         if tech == "r10":
-            tech = "R10.4"
+            tech = "R10.4.1"
         method = row["Method"]
         ax.scatter(
             row["True Positive Proportion (Truth)"], row["True Positive Proportion (Method)"],
@@ -404,8 +284,8 @@ def plot_recall_and_precision(truth_results, assembler_results, output):
     all_handles = tech_handles + method_handles
     ax.legend(handles=all_handles, loc='lower right', fontsize=20, title_fontsize=20, frameon=True)
      # Configure plot
-    ax.set_xlabel("Genomic copy number recall", fontsize=20)
-    ax.set_ylabel("Genomic copy number precision", fontsize=20)
+    ax.set_xlabel("Genomic-copy-number recall", fontsize=20)
+    ax.set_ylabel("Genomic-copy-number precision", fontsize=20)
     ax.set_xlim([0.69, 1.01])
     ax.set_ylim([0.69, 1.01])
     ax.xaxis.set_major_locator(MultipleLocator(0.05))
@@ -622,7 +502,7 @@ def plot_nucleotide_results_violin(similarities, output_file):
     all_accuracies = []
 
     for method_name, tech_dict in similarities.items():
-        for tech in ["9.4.1", "10.4"]:
+        for tech in ["9.4.1", "10.4.1"]:
             data = tech_dict.get(tech, [])
             tech = "R" + tech
             for value in data:
@@ -690,67 +570,6 @@ def plot_nucleotide_results_violin(similarities, output_file):
     ax.grid(axis="x", visible=False)
     ax.legend(loc='center right', fontsize=20, title_fontsize=20, frameon=True)
     plt.tight_layout()
-    plt.savefig(output_file, dpi=900)
-    plt.savefig(output_file.replace(".png", ".pdf"))
-    plt.close()
-
-def old_plot_nucleotide_results_violin(similarities, output_file):
-    # Extract data
-    r9_4_1_data = similarities["9.4.1"]
-    r10_4_1_data = similarities["10.4"]
-    # Prepare data for a single plot
-    combined_data = []
-    all_accuracies = []
-    for key, data in zip(["9.4.1", "10.4"], [r9_4_1_data, r10_4_1_data]):
-        accuracies = []
-        for value in data:
-            combined_data.append({"Technology": key, "Allele Accuracy": value})
-            accuracies.append(value)
-            all_accuracies.append(value)
-        print(f"{key} accuracy = {statistics.mean(accuracies)}")
-    print(f"All allele accuracies = {statistics.mean(all_accuracies)}")
-    # Convert to DataFrame for seaborn compatibility
-    df = pd.DataFrame(combined_data)
-    # Create the plot
-    fig = plt.figure(figsize=(12, 12), dpi=600)  # Explicitly set DPI here
-    # Violin plot
-    sns.violinplot(
-        x="Technology",
-        y="Allele Accuracy",
-        data=df,
-        palette="pastel",
-        linewidth=1.5,
-        saturation=1,
-        cut=0
-    )
-    # Strip plot
-    sns.stripplot(
-        x="Technology",
-        y="Allele Accuracy",
-        data=df,
-        palette="pastel",
-        jitter=True,
-        marker='o',
-        edgecolor='black',
-        linewidth=1,
-        alpha=1,
-        size=6
-    )
-    # Customize the plot
-    plt.ylabel("Allele accuracy", fontsize=20, labelpad=20)
-    plt.ylim([0.95, 1.001])
-#    plt.ylim([0.6, 1.005])
-    plt.xlabel("", fontsize=20)
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
-    plt.grid(axis="y", linestyle="--", alpha=0.7, zorder=1)
-    plt.grid(axis="x", visible=False)
-    plt.gca().spines['left'].set_visible(True)
-    plt.gca().spines['right'].set_visible(False)
-    plt.gca().spines['top'].set_visible(False)
-    plt.gca().spines['bottom'].set_linewidth(0.5)
-    plt.tight_layout()
-    # Save the plot
     plt.savefig(output_file, dpi=900)
     plt.savefig(output_file.replace(".png", ".pdf"))
     plt.close()
@@ -876,7 +695,7 @@ all_similarities = {}
 all_copy_number_tuples = {}
 for s in tqdm(samples):
     if "AUSM" in s:
-        method = "10.4"
+        method = "10.4.1"
     else:
         method = "9.4.1"
     if method not in all_similarities:
@@ -917,7 +736,7 @@ for s in tqdm(samples):
             amira_nucleotide_sequences[gene_name] = []
             amira_copy_numbers[gene_name] = []
         amira_nucleotide_sequences[gene_name].append(f">{gene_name}_amira\n{allele_sequence}")
-        amira_copy_numbers[gene_name].append(row['Approximate copy number'])
+        amira_copy_numbers[gene_name].append(row['Approximate cellular copy number'])
     # get the nucleotide accuracy of the amira alleles
     for gene_name in true_nucleotide_sequences:
         if gene_name in amira_nucleotide_sequences:

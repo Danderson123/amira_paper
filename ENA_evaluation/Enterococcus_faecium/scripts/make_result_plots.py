@@ -13,7 +13,7 @@ from matplotlib.patches import Patch
 
 sys.setrecursionlimit(50000)
 
-amira_outputs = glob.glob("evaluation_results/Amira_v0.8.0_output/*/amira_results.tsv")
+amira_outputs = glob.glob("evaluation_results/Amira_output/*/amira_results.tsv")
 
 def apply_rules(gene):
     gene = gene.replace("'", "")
@@ -202,7 +202,7 @@ for r in allele_rows:
 total_counts = {}
 pa_data = {"Method": [], "Gene": [], "Val": []}
 missing_data = {"sample": [], "gene": [], "component": []}
-
+all_samples = set()
 for a in tqdm(amira_outputs):
     sample = os.path.basename(os.path.dirname(a))
     amrfinder = os.path.join("evaluation_results/AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", sample, "AMR_finder_plus_results.gff")
@@ -254,6 +254,9 @@ for a in tqdm(amira_outputs):
             pa_data["Gene"].append(g)
             pa_data["Val"].append(0)
         total_counts[g].add(sample)
+    all_samples.add(sample)
+with open("E_faecium_nanopore_accessions.txt", "w") as o:
+    o.write("\n".join(list(all_samples)))
 
 data = {}
 for i in range(len(pa_data["Method"])):
@@ -397,7 +400,7 @@ ax.grid(axis="x", visible=False)
 ax.set_axisbelow(True)
 
 plt.xlabel("", fontsize=16, fontname='sans-serif')
-plt.ylabel("Recall", fontsize=16, fontname='sans-serif')
+plt.ylabel("Gene-presence recall", fontsize=16, fontname='sans-serif')
 plt.yticks(fontsize=16, fontname='sans-serif')
 plt.tight_layout()
 # Save the scatter plot
@@ -410,7 +413,6 @@ print(data_df.mean(axis=1), data_df.std(axis=1))
 print(data_df)
 # Identify genes that occur in only one sample
 single_sample_genes = [gene for gene in data_df.columns if len(total_counts[gene]) == 1]
-
 # For each method, compute the proportion of these genes with a recall of 0
 for method in data_df.index:
     if single_sample_genes:
@@ -418,4 +420,4 @@ for method in data_df.index:
         proportion_zero = zero_recall / len(single_sample_genes)
     else:
         proportion_zero = float('nan')
-    print(f"Proportion of genes (occurring in 1 sample) with 1 recall for {method}: {proportion_zero:.2f}")
+    print(f"Proportion of genes (occurring in 1 sample) with 1 recall for {method}: {proportion_zero:.2f}, total: {len(single_sample_genes)}")

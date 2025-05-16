@@ -5,13 +5,13 @@ Simulations of *E. coli*, using the *Escherichia coli str. K-12 substr. MG1655* 
 
 # Installation
 
-The pipeline assumes the Amira singularity container is available in the directory and is called `amira.img`. This can be installed [here](https://github.com/Danderson123/amira). You also need to have conda and singularity installed. All other dependencies can be installed via conda with:
+The pipeline assumes the Amira singularity container is available in the directory and is called `amira.v0.9.2.img`. This can be installed [here](https://github.com/Danderson123/amira). You also need to have conda and singularity installed. All other dependencies can be installed via conda with:
 
 ```{bash}
 conda env create -f envs/sims_env.yaml && conda activate simulation_env
 ```
 
-The pipeline assumes the panRG is avilable in this directory and it can be downloaded from [here](https://drive.google.com/file/d/13c_bUXnBEs9iEPPobou7-xEgkz_t08YP/view?usp=sharing).
+The pipeline assumes the panRG is avilable in this directory and it can be downloaded from [here](https://figshare.com/ndownloader/files/54318899).
 
 You will also need to install the AMRFinderPlus database.
 

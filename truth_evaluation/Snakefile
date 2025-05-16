@@ -3,7 +3,6 @@ import os
 
 # specify the output directories
 amira_output = "amira_output"
-amira_output_no_trim = "amira_output_no_trim"
 truth_gff_output = "truth_jsons"
 stats_output = "truth_results"
 copy_numbers_out = "mapped_nanopore_reads"
@@ -11,7 +10,7 @@ benchmark_dir = "benchmarks"
 trimmed_reads = "trimmed_reads"
 raven_dir = "raven_v1.8.3_nanopore_only_assemblies"
 # make the directories
-for d in [amira_output, truth_gff_output, stats_output, amira_output_no_trim, copy_numbers_out, benchmark_dir, trimmed_reads, raven_dir]:
+for d in [amira_output, truth_gff_output, stats_output, copy_numbers_out, benchmark_dir, trimmed_reads, raven_dir]:
     if not os.path.exists(d):
         os.mkdir(d)
 # specify the sample to nanopore read mapping
@@ -97,7 +96,6 @@ for sample in SAMPLES:
 rule all:
     input:
         os.path.join(stats_output, "figure_4a.png"),
-        expand(os.path.join("true_gene_content", "{nanopore_sample}"), nanopore_sample=SAMPLES)
 
 rule run_amira:
     input:
@@ -112,22 +110,7 @@ rule run_amira:
     benchmark:
         os.path.join(benchmark_dir, "run_amira.{sample}.txt")
     shell:
-        "singularity run amira.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
-
-rule run_amira_no_trim:
-    input:
-        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
-    output:
-        sample_output=directory(os.path.join(amira_output_no_trim, "{sample}"))
-    threads: 4
-    resources: mem_mb=30000
-    params:
-        panRG="Escherichia.coli.panidx.zip",
-        species="Escherichia_coli"
-    benchmark:
-        os.path.join(benchmark_dir, "run_amira_no_trim.{sample}.txt")
-    shell:
-        "singularity run amira.bfeddba.img amira --debug --output-component-fastqs --no-trim --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira.v0.9.2.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule make_truth_json:
     input:
@@ -146,28 +129,6 @@ rule make_truth_json:
         python3 software/make_truth_with_minimap.py \
         {input.assembly} {params.AMR_reference} {output.sample_output} {threads}
         """
-
-rule trim_adapters:
-    input:
-        nanopore=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
-    output:
-        os.path.join(trimmed_reads, "{sample}.fastq.gz")
-    benchmark:
-        os.path.join(benchmark_dir, "trim_adapters.{sample}.txt")
-    shell:
-        "porechop_abi -abi -i {input} -o {output}"
-
-rule get_true_genes_in_reads:
-    input:
-        nanopore=os.path.join(trimmed_reads, "{sample}.fastq.gz"),
-        AMR_reference="AMR_alleles_unified_modified.fa"
-    output:
-        sample_output=directory(os.path.join("true_gene_content", "{sample}"))
-    threads: 4
-    resources: mem_mb=30000, threads=4
-    conda: "envs/make_truth.yaml"
-    shell:
-        "mkdir -p {output.sample_output} && python3 software/get_true_AMR_genes.py --cores {threads} --reads {input.nanopore} --reference {input.AMR_reference} --output {output.sample_output}"
 
 rule unicycler_assemble:
     input:
@@ -315,9 +276,6 @@ def aggregate_truth_gffs(wildcards):
 def aggregate_amira(wildcards):
     return expand(os.path.join(amira_output, "{sample}"), sample=SAMPLES)
 
-def aggregate_amira_no_trim(wildcards):
-    return expand(os.path.join(amira_output_no_trim, "{sample}"), sample=SAMPLES)
-
 def aggregated_amrfp_flye(wildcards):
    return expand(os.path.join("AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", "{sample}", "AMR_finder_plus_results.tsv"), sample=SAMPLES)
 
@@ -371,7 +329,6 @@ rule get_stats:
         unicycler=aggregated_amrfp_unicycler,
         resfinder=aggregated_resfinder,
         shovill=aggregated_amrfp_shovill,
-        amira_no_trim=aggregate_amira_no_trim,
         truth_alleles="truth_allele_sequences",
         cns=aggregated_cns
     output:
