@@ -5,7 +5,7 @@ Pipelines to run Amira and AMRFinderPlus with Flye on a large number of *E. coli
 
 # Installation
 
-The pipeline assumes the Amira singularity container is available in the directory and is called `amira.v0.9.2.img`. This can be installed [here](https://github.com/Danderson123/amira). You also need to have conda installed.
+The pipeline assumes the Amira singularity container is available in the directory and is called `amira.v0.9.3.img`. This can be installed [here](https://github.com/Danderson123/amira). You also need to have conda installed.
 The dependencies for the *E. coli* evaluation can be installed with:
 ```{bash}
 conda env create -f Escherichia_coli/envs/E_coli_env.yaml && conda activate E_coli_env
@@ -37,7 +37,7 @@ conda env create -f envs/plot_results.yaml && conda activate E_coli_plot_env
 ```
 The plots can then be generated with:
 ```{bash}
-python3 scripts/make_result_plots.py
+python3 scripts/plot_frequencies.py
 ```
 # Running the *K. pneumoniae* evaluation
 
@@ -51,7 +51,7 @@ conda env create -f envs/plot_results.yaml && conda activate K_pneumoniae_plot_e
 ```
 The plots can then be generated with:
 ```{bash}
-python3 scripts/make_result_plots.py
+python3 scripts/plot_frequencies.py
 ```
 
 # Running the *E. faecium* evaluation
@@ -66,5 +66,5 @@ conda env create -f envs/plot_results.yaml && conda activate E_faecium_plot_env
 ```
 The plots can then be generated with:
 ```{bash}
-python3 scripts/make_result_plots.py
+python3 scripts/plot_frequencies.py
 ```

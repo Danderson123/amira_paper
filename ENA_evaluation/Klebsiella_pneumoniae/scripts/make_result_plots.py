@@ -13,7 +13,7 @@ from matplotlib.patches import Patch
 
 sys.setrecursionlimit(50000)
 
-amira_outputs = glob.glob("evaluation_results/Amira_output/*/amira_results.tsv")
+amira_outputs = glob.glob("evaluation_results/Amira_output.v0.9.3/*/amira_results.tsv")
 
 def apply_rules(gene):
     gene = gene.replace("'", "")
@@ -223,6 +223,8 @@ for a in tqdm(amira_outputs):
         unique_amrfp_genes.add(gene_name)
     # detect presence or absence
     for g in truth:
+        if g == "":
+            continue
         if g not in total_counts:
             total_counts[g] = set()
         if g in unique_amrfp_genes:
@@ -271,7 +273,7 @@ data_df = pd.DataFrame(plot_data).pivot(index="Method", columns="Gene", values="
 # Sort columns by total count (number of samples where the gene is present)
 sorted_genes = sorted(data_df.columns, key=lambda gene: (-len(total_counts[gene]), gene))
 data_df = data_df[sorted_genes]
-data_df = data_df.loc[:, (data_df != 0).any(axis=0)]
+#data_df = data_df.loc[:, (data_df != 0).any(axis=0)]
 # Create custom colormap
 cmap = mcolors.LinearSegmentedColormap.from_list("custom_cmap", ["#fde725", "#440154"])
 
@@ -385,6 +387,7 @@ ax.spines['top'].set_visible(False)
 ax.spines['bottom'].set_linewidth(0.5)
 ax.grid(axis="y", linestyle="--", alpha=0.7, zorder=1)
 ax.grid(axis="x", visible=False)
+ax.grid(False)
 ax.set_axisbelow(True)
 
 plt.xlabel("", fontsize=16, fontname='sans-serif')
@@ -398,10 +401,9 @@ plt.close()
 
 print("Mean recall for each method:")
 print(data_df.mean(axis=1), data_df.std(axis=1))
-
+print(data_df)
 # Identify genes that occur in only one sample
 single_sample_genes = [gene for gene in data_df.columns if len(total_counts[gene]) == 1]
-
 # For each method, compute the proportion of these genes with a recall of 0
 for method in data_df.index:
     if single_sample_genes:

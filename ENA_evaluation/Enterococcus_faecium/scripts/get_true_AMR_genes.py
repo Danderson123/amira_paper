@@ -20,6 +20,7 @@ def supplement_with_genes_from_reads(genes_file, nanopore, output_file, cores, m
     # import the sam
     valid_candidates = []
     proportion_reference_covered = {}
+    # check if any
     with pysam.AlignmentFile(output_file, "r") as sam_file:
         for read in sam_file.fetch():
             if read.is_unmapped:
@@ -42,8 +43,8 @@ def supplement_with_genes_from_reads(genes_file, nanopore, output_file, cores, m
                     proportion_reference_covered[read.reference_name] = set()
                 proportion_reference_covered[read.reference_name].add(read.query_name)
     for ref in proportion_reference_covered:
-        if len(proportion_reference_covered[ref]) >= mean_depth * 0.5:
-            valid_candidates.append(ref)
+        #if len(proportion_reference_covered[ref]) >= mean_depth * 0.5:
+        valid_candidates.append(ref)
     return valid_candidates
 
 def apply_rules(gene):
