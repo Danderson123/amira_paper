@@ -9,7 +9,7 @@ The pipeline assumes you have downloaded the truth evaluation data and it is ava
 
 # Installation
 
-The pipeline assumes the Amira singularity container is available in the directory and is called `amira.v0.9.2.img`. This can be installed [here](https://github.com/Danderson123/amira). You also need to have conda installed. You will need to build the `kma` binary to run ResFinder. You can do this by running:
+The pipeline assumes the Amira singularity container is available in the directory and is called `amira.v0.9.3.img`. This can be installed [here](https://github.com/Danderson123/amira). You also need to have conda installed. You will need to build the `kma` binary to run ResFinder. You can do this by running:
 ```{bash}
 cd software/kma && make && cd ../..
 ```
