@@ -218,7 +218,7 @@ for a in tqdm(amira_outputs):
         amira_counts[gene_name] = amira_counts.get(gene_name, 0) + 1
     amrfp_counts = {}
     for _, row in amrfinder_content.iterrows():
-        if row["% Coverage of reference sequence"] < 90 or row["Element subtype"] == "POINT":
+        if row["% Coverage of reference sequence"] < 85 or row["Element subtype"] == "POINT":
             continue
         gene_name = apply_rules(row["Gene symbol"])
         if gene_name not in reference_genes:
