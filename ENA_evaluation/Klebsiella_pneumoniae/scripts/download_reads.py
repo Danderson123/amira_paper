@@ -14,10 +14,10 @@ with open("K_pneumoniae_nanopore_accessions.txt") as i:
     nanopore_accessions = i.read().split("\n")
 
 # Filter for nanopore-related sequencing runs
-for index, row in data.iterrows():
-    description = row["description"].lower()
-    if any(s in description for s in {"promethion", "minion", "nanopore", "ont", "pacbio"}):
-        nanopore_accessions.append(row["run_accession"])
+#for index, row in data.iterrows():
+#    description = row["description"].lower()
+#    if any(s in description for s in {"promethion", "minion", "nanopore", "ont", "pacbio"}):
+#        nanopore_accessions.append(row["run_accession"])
 
 # Function to search ENA and retrieve fastq file link
 def get_fastq_links(accession):
