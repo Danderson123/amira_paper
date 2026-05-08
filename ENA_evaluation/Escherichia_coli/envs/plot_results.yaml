@@ -2,6 +2,7 @@ name: E_coli_plot_env
 channels:
  - bioconda
  - conda-forge
+ - nodefaults
 dependencies:
   - matplotlib=3.9.2
   - seaborn=0.13.2
