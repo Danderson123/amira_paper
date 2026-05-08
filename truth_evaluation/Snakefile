@@ -5,7 +5,7 @@ import os
 amira_output = "amira_output"
 truth_gff_output = "truth_jsons"
 stats_output = "truth_results"
-copy_numbers_out = "mapped_nanopore_reads"
+copy_numbers_out = "mapped_illumina_reads"
 benchmark_dir = "benchmarks"
 trimmed_reads = "trimmed_reads"
 raven_dir = "raven_v1.8.3_nanopore_only_assemblies"
@@ -105,12 +105,13 @@ rule run_amira:
     threads: 4
     resources: mem_mb=30000
     params:
-        panRG="Escherichia.coli.panidx.zip",
+        panRG="Escherichia.coli.thesis.panidx.zip",
         species="Escherichia_coli"
     benchmark:
         os.path.join(benchmark_dir, "run_amira.{sample}.txt")
     shell:
-        "singularity run amira.v0.9.3.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+    #    "singularity run amira.v0.10.1.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira.v0.11.0.img amira --reads {input.reads} --output {output.sample_output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule make_truth_json:
     input:
@@ -129,6 +130,23 @@ rule make_truth_json:
         python3 software/make_truth_with_minimap.py \
         {input.assembly} {params.AMR_reference} {output.sample_output} {threads}
         """
+
+rule run_amrfp_on_truth:
+    input:
+        assembly=lambda wildcards: mapping.get(wildcards.sample, {}).get('assembly', '0')
+    output:
+        outdir=directory(os.path.join("AMR_finder_plus_results.truth", "{sample}")),
+        outfile=os.path.join("AMR_finder_plus_results.truth", "{sample}", "AMR_finder_plus_results.tsv")
+    threads: 4
+    resources:
+        mem_mb=15000
+    params:
+        amrfinder_db="2024-07-22.1"
+    benchmark:
+        os.path.join(benchmark_dir, "run_amrfp_on_truth.{sample}.txt")
+    shell:
+        "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input.assembly} -o {output.outfile} -t {threads} --plus --organism Escherichia"
+
 
 rule unicycler_assemble:
     input:
@@ -192,6 +210,71 @@ rule shovill_assemble:
     shell:
         "shovill --outdir {output} --R1 {input.illumina_1} --R2 {input.illumina_2} --cpus {threads}"
 
+rule autocycler_assemble:
+    input:
+        nanopore=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0'),
+        illumina_1=lambda wildcards: f"{illumina_mapping.get(wildcards.sample, '0')}_1.fastq.gz".replace(' ', ''),
+        illumina_2=lambda wildcards: f"{illumina_mapping.get(wildcards.sample, '0')}_2.fastq.gz".replace(' ', '')
+    output:
+        outdir=directory(os.path.join("autocycler_v0.5.0_nanopore_only_assemblies", "{sample}")),
+        outfile=os.path.join("autocycler_v0.5.0_nanopore_only_assemblies", "{sample}", "autocycler_out", "pypolca", "pypolca_corrected.fasta")
+    threads: 4
+    resources:
+        mem_mb=100000,runtime=1400
+    conda: "envs/autocycler.yaml"
+    benchmark:
+        os.path.join(benchmark_dir, "autocycler_assemble.{sample}.txt")
+    shell:
+        'bash software/autoautocycler.sh -o {output.outdir} -s 5000000 -t {threads} -a "raven flye canu" -1 {input.illumina_1} -2 {input.illumina_2} {input.nanopore}'
+
+rule run_amrfp_on_autocycler:
+    input:
+        os.path.join("autocycler_v0.5.0_nanopore_only_assemblies", "{sample}", "autocycler_out", "pypolca", "pypolca_corrected.fasta")
+        #os.path.join("autocycler_v0.5.0_nanopore_only_assemblies", "{sample}", "autocycler_out", "consensus_assembly.fasta")
+    output:
+        outdir=directory(os.path.join("AMR_finder_plus_results.autocycler_v0.5.0_nanopore_only_assemblies", "{sample}")),
+        outfile=os.path.join("AMR_finder_plus_results.autocycler_v0.5.0_nanopore_only_assemblies", "{sample}", "AMR_finder_plus_results.tsv")
+    threads: 4
+    resources:
+        mem_mb=15000
+    params:
+        amrfinder_db="2024-07-22.1"
+    benchmark:
+        os.path.join(benchmark_dir, "run_amrfp_on_autocycler.{sample}.txt")
+    shell:
+        "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input} -o {output.outfile} -t {threads} --plus --organism Escherichia"
+
+rule wtdbg_assemble:
+    input:
+        nanopore=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+    output:
+        outdir=directory(os.path.join("wtdbg_v2.5_nanopore_only_assemblies", "{sample}")),
+	outfile=os.path.join("wtdbg_v2.5_nanopore_only_assemblies", "{sample}", "polished_contigs.fasta")
+    threads: 4
+    resources:
+        mem_mb=100000
+    conda: "envs/autocycler.yaml"
+    benchmark:
+        os.path.join(benchmark_dir, "wtdbg_assemble.{sample}.txt")
+    shell:
+        'mkdir -p {output.outdir} && wtdbg2 -x ont -g 5m -t {threads} -i {input.nanopore} -fo {output.outdir}/assembly && wtpoa-cns -t {threads} -i {output.outdir}/assembly.ctg.lay.gz  -fo {output.outdir}/polished_contigs.fasta'
+
+rule run_amrfp_on_wtdbg2:
+    input:
+        os.path.join("wtdbg_v2.5_nanopore_only_assemblies", "{sample}", "polished_contigs.fasta")
+    output:
+        outdir=directory(os.path.join("AMR_finder_plus_results.wtdbg_v2.5_nanopore_only_assemblies", "{sample}")),
+        outfile=os.path.join("AMR_finder_plus_results.wtdbg_v2.5_nanopore_only_assemblies", "{sample}", "AMR_finder_plus_results.tsv")
+    threads: 4
+    resources:
+        mem_mb=15000
+    params:
+        amrfinder_db="2024-07-22.1"
+    benchmark:
+        os.path.join(benchmark_dir, "run_amrfp_on_wtdbg2.{sample}.txt")
+    shell:
+        "mkdir -p {output.outdir} && amrfinder -d {params.amrfinder_db} -n {input} -o {output.outfile} -t {threads} --plus --organism Escherichia"
+
 rule run_amrfp_on_shovill:
     input:
         os.path.join("shovill_v1.1.0_illumina_only_assemblies", "{sample}")
@@ -202,7 +285,7 @@ rule run_amrfp_on_shovill:
     resources:
         mem_mb=15000
     params:
-        amrfinder_db="2024-01-31.1"
+        amrfinder_db="2024-07-22.1"
     benchmark:
         os.path.join(benchmark_dir, "run_amrfp_on_shovill.{sample}.txt")
     shell:
@@ -218,7 +301,7 @@ rule run_amrfp_on_unicycler:
     resources:
         mem_mb=15000
     params:
-        amrfinder_db="2024-01-31.1"
+        amrfinder_db="2024-07-22.1"
     benchmark:
         os.path.join(benchmark_dir, "run_amrfp_on_unicycler.{sample}.txt")
     shell:
@@ -234,7 +317,7 @@ rule run_amrfp_on_flye:
     resources:
         mem_mb=15000
     params:
-        amrfinder_db="2024-01-31.1"
+        amrfinder_db="2024-07-22.1"
     benchmark:
         os.path.join(benchmark_dir, "run_amrfp_on_flye.{sample}.txt")
     shell:
@@ -250,7 +333,7 @@ rule run_amrfp_on_raven:
     resources:
         mem_mb=15000
     params:
-        amrfinder_db="2024-01-31.1"
+        amrfinder_db="2024-07-22.1"
     benchmark:
         os.path.join(benchmark_dir, "run_amrfp_on_raven.{sample}.txt")
     shell:
@@ -288,13 +371,24 @@ def aggregated_amrfp_shovill(wildcards):
 def aggregated_amrfp_raven(wildcards):
     return expand(os.path.join("AMR_finder_plus_results.raven_v1.8.3_nanopore_only_assemblies", "{sample}", "AMR_finder_plus_results.tsv"), sample=SAMPLES)
 
+def aggregated_amrfp_autocycler(wildcards):
+    return expand(os.path.join("AMR_finder_plus_results.autocycler_v0.5.0_nanopore_only_assemblies", "{sample}", "AMR_finder_plus_results.tsv"), sample=SAMPLES)
+
+def aggregated_amrfp_wtdbg(wildcards):
+    return expand(os.path.join("AMR_finder_plus_results.wtdbg_v2.5_nanopore_only_assemblies", "{sample}", "AMR_finder_plus_results.tsv"), sample=SAMPLES)
+
+def aggregated_amrfp_truth(wildcards):
+    return expand(os.path.join("AMR_finder_plus_results.truth", "{sample}", "AMR_finder_plus_results.tsv"), sample=SAMPLES)
+
 def aggregated_resfinder(wildcards):
     return expand(os.path.join("resfinder_results", "{sample}"), sample=SAMPLES)
 
 rule estimate_cellular_copy_numbers:
     input:
         assembly=lambda wildcards: mapping.get(wildcards.sample, {}).get('assembly', '0'),
-        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0')
+        reads=lambda wildcards: mapping.get(wildcards.sample, {}).get('ONT', '0'),
+        illumina_1=lambda wildcards: f"{illumina_mapping.get(wildcards.sample, '0')}_1.fastq.gz".replace(' ', ''),
+        illumina_2=lambda wildcards: f"{illumina_mapping.get(wildcards.sample, '0')}_2.fastq.gz".replace(' ', '')
         #reads=os.path.join(trimmed_reads, "{sample}.fastq.gz"),
     output:
         os.path.join(copy_numbers_out, "{sample}.json")
@@ -303,7 +397,7 @@ rule estimate_cellular_copy_numbers:
         mem_mb=30000
     conda: "envs/cne.yaml"
     shell:
-        "mkdir -p {copy_numbers_out} && python3 software/estimate_contig_copy_numbers.py {input.assembly} {input.reads} {copy_numbers_out} {threads}"
+        "mkdir -p {copy_numbers_out} && python3 software/estimate_contig_copy_numbers.py {input.assembly} {input.illumina_1} {input.illumina_2} {copy_numbers_out} {threads}"
 
 def aggregated_cns(wildcards):
     return expand(os.path.join(copy_numbers_out, "{sample}.json"), sample=SAMPLES)
@@ -329,8 +423,11 @@ rule get_stats:
         unicycler=aggregated_amrfp_unicycler,
         resfinder=aggregated_resfinder,
         shovill=aggregated_amrfp_shovill,
+        autocycler=aggregated_amrfp_autocycler,
+        wtdbg=aggregated_amrfp_wtdbg,
         truth_alleles="truth_allele_sequences",
-        cns=aggregated_cns
+        cns=aggregated_cns,
+        truth_AMRFP=aggregated_amrfp_truth
     output:
         os.path.join(stats_output, "figure_4a.png")
     threads: 1
@@ -340,3 +437,4 @@ rule get_stats:
         AMR_reference="AMR_alleles_unified.fa"
     shell:
         "python3 software/make_truth_results.py"
+

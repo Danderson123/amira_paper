@@ -49,8 +49,22 @@ print(f"raven + AMRFP mean runtime: {statistics.mean(list(per_sample_runtime.val
 print(f"raven + AMRFP mean RAM: {statistics.mean(list(per_sample_RAM.values()))} MB, minimum: {min(list(per_sample_RAM.values()))}, maximum: {max(list(per_sample_RAM.values()))}\n")
 
 # print raven aggregated
-unicycler_stats = stats["unicycler_assemble"]
-amrfp_unicycler_stats = stats["run_amrfp_on_unicycler"]
+raven_stats = stats["wtdbg_assemble"]
+amrfp_raven_stats = stats["run_amrfp_on_wtdbg2"]
+per_sample_runtime = {}
+per_sample_RAM = {}
+for row in raven_stats:
+    per_sample_runtime[row[0]] = row[1]
+    per_sample_RAM[row[0]] = row[2]
+for row in amrfp_raven_stats:
+    per_sample_runtime[row[0]] += row[1]
+    per_sample_RAM[row[0]] = max(row[2], per_sample_RAM[row[0]])
+print(f"wtdbg2 + AMRFP mean runtime: {statistics.mean(list(per_sample_runtime.values()))} seconds, minimum: {min(list(per_sample_runtime.values()))}, maximum: {max(list(per_sample_runtime.values()))}")
+print(f"wtdbg2 + AMRFP mean RAM: {statistics.mean(list(per_sample_RAM.values()))} MB, minimum: {min(list(per_sample_RAM.values()))}, maximum: {max(list(per_sample_RAM.values()))}\n")
+
+# print raven aggregated
+unicycler_stats = stats["autocycler_assemble"]
+amrfp_unicycler_stats = stats["run_amrfp_on_autocycler"]
 per_sample_runtime = {}
 per_sample_RAM = {}
 for row in unicycler_stats:
@@ -59,5 +73,5 @@ for row in unicycler_stats:
 for row in amrfp_unicycler_stats:
     per_sample_runtime[row[0]] += row[1]
     per_sample_RAM[row[0]] = max(row[2], per_sample_RAM[row[0]])
-print(f"unicycler + AMRFP mean runtime: {statistics.mean(list(per_sample_runtime.values()))} seconds, minimum: {min(list(per_sample_runtime.values()))}, maximum: {max(list(per_sample_runtime.values()))}")
-print(f"unicycler + AMRFP mean RAM: {statistics.mean(list(per_sample_RAM.values()))} MB, minimum: {min(list(per_sample_RAM.values()))}, maximum: {max(list(per_sample_RAM.values()))}\n")
+print(f"autocycler + AMRFP mean runtime: {statistics.mean(list(per_sample_runtime.values()))} seconds, minimum: {min(list(per_sample_runtime.values()))}, maximum: {max(list(per_sample_runtime.values()))}")
+print(f"autocycler + AMRFP mean RAM: {statistics.mean(list(per_sample_RAM.values()))} MB, minimum: {min(list(per_sample_RAM.values()))}, maximum: {max(list(per_sample_RAM.values()))}\n")

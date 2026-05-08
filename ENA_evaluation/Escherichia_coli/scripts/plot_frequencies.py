@@ -199,6 +199,10 @@ def apply_rules(gene):
         gene = "blaGMA"
     if "ant(6)-I" in gene and not "ant(6)-II" in gene:
         gene = "ant(6)-I"
+    if "aac(2)-II" in gene:
+        gene = "aac(2)-II"
+    if "floR" in gene:
+        gene = "floR"
     return gene
 
 with open("AMR_alleles_unified.fa") as i:
@@ -212,9 +216,10 @@ for r in allele_rows:
 gene_presence_absence = {}
 all_samples = set()
 gene_in_truth = []
+AMRFP_gene_counts = {}
 for a in tqdm(amira_outputs):
     sample = os.path.basename(os.path.dirname(a))
-    amrfinder = os.path.join("evaluation_results/AMR_finder_plus_results.flye_v2.9.3_nanopore_only_assemblies", sample, "AMR_finder_plus_results.gff")
+    amrfinder = os.path.join("evaluation_results/AMR_finder_plus_results_updated.flye_v2.9.3_nanopore_only_assemblies", sample, "AMR_finder_plus_results.gff")
     verification_file = os.path.join("evaluation_results", "amira_allele_coverages", sample, "amira_coverages.json")
     if not os.path.exists(verification_file):
         continue
@@ -232,7 +237,7 @@ for a in tqdm(amira_outputs):
         amira_counts[gene_name] = amira_counts.get(gene_name, 0) + 1
     amrfp_counts = {}
     for _, row in amrfinder_content.iterrows():
-        if row["% Coverage of reference sequence"] < 90 or row["Element subtype"] == "POINT":
+        if row["% Coverage of reference sequence"] < 85 or row["Element subtype"] == "POINT":
             continue
         gene_name = apply_rules(row["Gene symbol"])
         if gene_name not in reference_genes:
@@ -246,8 +251,13 @@ for a in tqdm(amira_outputs):
             gene_presence_absence[gene]["Amira"] += 1
         if gene in amrfp_counts:
             gene_presence_absence[gene]["AMRFP Flye"] += 1
+    AMRFP_gene_counts[sample] = {}
+    for gene in amrfp_counts:
+        AMRFP_gene_counts[sample][gene] = amrfp_counts[gene]
     all_samples.add(sample)
 
+with open("E_coli_AMRFP_gene_counts.json", "w") as o:
+    o.write(json.dumps(AMRFP_gene_counts))
 gene_data = []
 amira_higher = 0
 amira_same = 0
@@ -268,9 +278,10 @@ df = pd.DataFrame(gene_data, columns=["Gene", "Amira_Freq", "AMRFP_Flye_Freq"])
 df["Max_Freq"] = df[["Amira_Freq", "AMRFP_Flye_Freq"]].max(axis=1)
 df = df.sort_values(by="Max_Freq", ascending=False)
 
+
 plt.rcParams.update({'font.family': 'sans-serif', 'font.size': 16})
 
-fig, ax = plt.subplots(figsize=(36, 12))
+fig, ax = plt.subplots(figsize=(40, 12))
 ax.set_yscale("log")
 
 def safe_log_value(val, min_val=0.00001):
@@ -288,11 +299,11 @@ for idx, row in df.iterrows():
     plt.scatter(x, amira_freq, label="Amira", marker="o", color=palette[0], zorder=2,  edgecolor='black', s=200)
     plt.scatter(x, amrfp_freq, label="AMRFP Flye", marker="X",  edgecolor='black', color=palette[1], zorder=2, s=300)
 ax.set_xticks(range(len(df)))
-ax.set_xticklabels(df["Gene"], rotation=90, fontstyle='italic')
-ax.set_ylabel("AMR gene-presence frequency")
+ax.set_xticklabels(df["Gene"], rotation=90, fontstyle='italic',fontsize=24)
+ax.set_ylabel("AMR gene-presence frequency",fontsize=24)
 ax.set_ylim([0.00001, 1.1])
 ax.set_yticks([0.00001, 0.0001, 0.001, 0.01, 0.1, 1])
-ax.set_yticklabels(["0", "0.0001", "0.001", "0.01", "0.1", "1"])
+ax.set_yticklabels(["0", "0.0001", "0.001", "0.01", "0.1", "1"], fontsize=24)
 ax.set_xlim([-0.5, len(df) - 0.5])
 
 ax.spines['left'].set_visible(True)

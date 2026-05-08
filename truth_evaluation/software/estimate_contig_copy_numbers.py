@@ -62,17 +62,18 @@ def get_mean_read_depth_per_contig(bam_file):
     longest_contig = df.groupby("contig")["position"].max().idxmax()
     return mean_depth_per_contig, longest_contig
 
-def map_fastq_to_ref(fastq_file, reference_file, output_sam, cores, minimap2_path="minimap2"):
+def map_fastq_to_ref(fastq1, fastq2, reference_file, output_sam, cores, minimap2_path="minimap2"):
     # Build the minimap2 command
     output_bam = output_sam.replace(".sam", ".bam")
-    command = f"{minimap2_path} --eqx -t {cores} -a -x map-ont --secondary=no -o {output_sam} {reference_file} {fastq_file} && samtools sort -@ {cores} {output_sam} > {output_bam} && rm -rf {output_sam}"
+    command = f"{minimap2_path} --eqx -t {cores} -a -x sr --secondary=no -o {output_sam} {reference_file} {fastq1} {fastq2} && samtools sort -@ {cores} {output_sam} > {output_bam} && rm -rf {output_sam}"
     if not os.path.exists(output_bam):
         subprocess.run(command, shell=True, check=True)
     return output_bam
 
 parser = argparse.ArgumentParser(description="Map genes to assemblies and generate GFF files of alleles with 95% similarity.")
 parser.add_argument("assembly", help="Assembly path.")
-parser.add_argument("reads", help="Read path.")
+parser.add_argument("read1", help="Read 1 path.")
+parser.add_argument("read2", help="Read 2 path.")
 parser.add_argument("output", help="Output path.")
 parser.add_argument("cores", help="Number of CPUs to use.")
 args = parser.parse_args()
@@ -80,7 +81,7 @@ args = parser.parse_args()
 sample = os.path.basename(args.assembly).replace(".fasta", "").replace(".fa", "")
 sam_file = os.path.join(args.output, sample + ".sam")
 reference = args.assembly
-output_bam = map_fastq_to_ref(args.reads, args.assembly, sam_file, args.cores)
+output_bam = map_fastq_to_ref(args.read1, args.read2, args.assembly, sam_file, args.cores)
 depth_per_contig, longest_contig = get_mean_read_depth_per_contig(output_bam)
 normalised_depths = {c: depth_per_contig[c] / depth_per_contig[longest_contig] for c in depth_per_contig}
 with open(os.path.join(args.output, sample + ".json"), "w") as o:

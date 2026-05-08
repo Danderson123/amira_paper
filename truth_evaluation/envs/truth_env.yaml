@@ -14,6 +14,7 @@ dependencies:
  - mafft=7.526
  - biopython=1.79
  - rasusa=2.1.0
+ - wtdbg=2.5
  - pip:
     - pysam==0.22.1
     - pyfastaq==3.17.0

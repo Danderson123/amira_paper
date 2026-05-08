@@ -115,7 +115,12 @@ def write_assembler_alleles(assembler):
             assembly = os.path.join(assembly_dir, sample, "assembly.fasta")
         if "raven" in assembler:
             assembly = os.path.join(assembly_dir, sample + ".fasta")
-        # import the assembly
+        if "wtdbg" in assembler:
+            assembly = os.path.join(assembly_dir, sample, "polished_contigs.fasta")
+        if "autocycler" in assembler:
+            #assembly = os.path.join(assembly_dir, sample, "autocycler_out/consensus_assembly.fasta")
+            assembly = os.path.join(assembly_dir, sample, "autocycler_out/pypolca/pypolca_corrected.fasta")
+	# import the assembly
         reader = pyfastaq.sequences.file_reader(assembly)
         seq_dict = {}
         for sequence in reader:
@@ -268,7 +273,7 @@ def calculate_assembler_accuracies(assembler):
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
     # get the sample names
-    samples = [os.path.basename(f).replace(".json", "") for f in glob.glob("truth_jsons/*.json")]
+    samples = [os.path.basename(f).replace(".json", "") for f in glob.glob("truth_jsons/*.json") if not ".allele_names.json" in f]
     # Initialize dictionary to store data per scenario, depth, and length
     data_list = {s: {} for s in samples}
     all_similarities = {}
@@ -311,6 +316,8 @@ def calculate_assembler_accuracies(assembler):
             if gene_name in test_nucleotide_sequences:
                 all_sequences = "\n".join(true_nucleotide_sequences[gene_name] + test_nucleotide_sequences[gene_name])
                 test_similarities = calculate_allele_accuracy_with_mafft(all_sequences, output_dir)
+                if "autocycler" in assembler:
+                    print(test_similarities)
                 all_similarities[method] += test_similarities
 
     return all_similarities

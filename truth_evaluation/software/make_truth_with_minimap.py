@@ -169,17 +169,27 @@ def write_json(filtered_hits, output_json, assembly_file, additional_genes):
     import json
     filtered_hits = filtered_hits.sort_values(by=['target_name', 'target_start'])
     gene_counts = {}
+    allele_counts = {}
     for _, hit in filtered_hits.iterrows():
         gene_name = apply_rules(hit['query_name'].split(';')[1].split(".")[0])
+        allele_name = hit['query_name'].split(';')[1].split(".")[0]
         if gene_name not in gene_counts:
             gene_counts[gene_name] = 0
         gene_counts[gene_name] += 1
+        if allele_name not in allele_counts:
+            allele_counts[allele_name] = 0
+        allele_counts[allele_name] += 1
     for gene in additional_genes:
+        allele_name = gene.split(";")[1].split(".")[0]
         gene_name = apply_rules(gene.split(";")[1].split(".")[0])
         if gene_name not in gene_counts:
             gene_counts[gene_name] = 1
+        if allele_name not in allele_counts:
+            allele_counts[allele_name] = 1
     with open(output_json, "w") as o:
         o.write(json.dumps(gene_counts))
+    with open(output_json.replace(".json", ".allele_names.json"), "w") as o:
+        o.write(json.dumps(allele_counts))
 
 def write_gff(filtered_hits, output_file, assembly_file):
     filtered_hits = filtered_hits.sort_values(by=['target_name', 'target_start'])

@@ -1,4 +1,4 @@
-import glob
+qimport glob
 import os
 import json
 import sys
@@ -22,12 +22,16 @@ def aggregate_truth(wildcards):
 def aggregate_amira_validation(wildcards):
     return expand(os.path.join(output_dir, "amira_allele_coverages", "{nanopore_sample}"), nanopore_sample=NANOPORE_SAMPLES)
 
+def aggregate_bakta(wildcards):
+    return expand(os.path.join(output_dir, "bakta_annotated_assemblies", "{nanopore_sample}"), nanopore_sample=NANOPORE_SAMPLES)
+
 rule all:
     input:
         #aggregate_amira,
         #aggregate_flye_nanopore,
         #aggregate_truth,
-        aggregate_amira_validation
+        #aggregate_amira_validation
+        aggregate_bakta
 
 rule flye_assemble:
     input:
@@ -52,7 +56,7 @@ rule run_amrfp_on_flye:
     resources:
         mem_mb=15000
     shell:
-        "mkdir -p {output.outdir} && amrfinder -d ../2024-01-31.1 -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
+        "mkdir -p {output.outdir} && amrfinder -d ../2024-07-22.1 -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
 
 rule run_amira:
     input:
@@ -91,3 +95,18 @@ rule check_amira_allele_coverages:
     conda: "envs/make_truth.yaml"
     shell:
         "mkdir -p {output.sample_output} && python3 scripts/verify_amira_calls.py --cores {threads} --reads {input.reads} --amira-output {input.amira_output} --output {output.sample_output}"
+
+rule run_bakta:
+    input:
+        os.path.join(output_dir, "flye_v2.9.3_nanopore_only_assemblies", "{nanopore_sample}")
+    output:
+        directory(os.path.join(output_dir, "bakta_annotated_assemblies", "{nanopore_sample}"))
+    params:
+        bakta_db="/nfs/research/zi/dander/helper_scripts/bakta_db"
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 20000 * attempt, threads=1
+    conda:
+        "/hps/nobackup/iqbal/dander/Amira_panRG_pipeline_test/envs/bakta.yaml"
+    shell:
+        "bakta  --skip-trna --skip-tmrna --skip-rrna --skip-ncrna --skip-crispr --skip-plot --skip-sorf --skip-pseudo --skip-ncrna-region  --db {params.bakta_db} --threads {threads} --output {output} {input}/assembly.fasta"

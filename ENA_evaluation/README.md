@@ -23,7 +23,7 @@ conda env create -f Enterococcus_faecium/envs/E_faecium_env.yaml && conda activa
 The pipeline assumes the *E. coli* panRG is located in `Escherichia_coli`. It can be downloaded from [here](https://figshare.com/ndownloader/files/54318899).
 The pipeline assumes the *K. pneumoniae* panRG is located in `Klebsiella_pneumoniae`. It can be downloaded from [here](https://figshare.com/ndownloader/files/53398349).
 The pipeline assumes the *E. faecium* panRG is located in `Enterococcus_faecium`. It can be downloaded from [here](https://figshare.com/ndownloader/files/53395052).
-You will also need to install the AMRFinderPlus database.
+You will also need to download the AMRFinderPlus database (`v2024-07-22.1`) and have it available in this directory.
 
 # Running the *E. coli* evaluation
 
