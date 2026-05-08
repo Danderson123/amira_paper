@@ -89,10 +89,10 @@ rule run_amira:
     resources:
         mem_mb=lambda wildcards, attempt: 50000 * attempt, threads=5, runtime=7200
     params:
-        panRG="Escherichia.coli.panidx.zip",
+        panRG="Escherichia.coli.thesis.panidx.zip",
         species="Escherichia_coli",
     shell:
-        "singularity run amira.dfa7a74.sif amira --reads {input.readfile} --output {output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
+        "singularity run amira.v0.11.0.img amira --reads {input.readfile} --output {output} --species {params.species} --cores {threads} --panRG-path {params.panRG}"
 
 rule flye_assemble:
     input:
@@ -116,4 +116,4 @@ rule run_amrfp_on_flye:
     resources:
         mem_mb=15000
     shell:
-        "mkdir -p {output.outdir} && amrfinder -d /hps/nobackup/iqbal/dander/amira_paper_latest/truth_evaluation/2024-07-22.1 -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"
+        "mkdir -p {output.outdir} && amrfinder -d 2024-07-22.1 -n {input}/assembly.fasta -o {output.outfile} -t {threads} --plus --organism Escherichia"

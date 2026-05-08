@@ -1,5 +1,6 @@
 channels:
  - bioconda
  - conda-forge
+ - nodefaults
 dependencies:
   - canu=2.3
