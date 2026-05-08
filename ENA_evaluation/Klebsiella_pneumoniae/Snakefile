@@ -4,7 +4,7 @@ import json
 import sys
 import statistics
 
-NANOPORE_SAMPLES = [os.path.basename(f).split(".fastq.gz")[0] for f in glob.glob("/nfs/research/zi/dander/amira_paper_latest/ENA_evaluation/Klebsiella_pneumoniae/nanopore_reads/*.fastq.gz") ]
+NANOPORE_SAMPLES = [os.path.basename(f).split(".fastq.gz")[0] for f in glob.glob("nanopore_reads/*.fastq.gz") ]
 output_dir = "evaluation_results"
 
 if not os.path.exists(output_dir):
@@ -56,7 +56,7 @@ rule run_amrfp_on_flye:
 
 rule run_amira:
     input:
-        reads=lambda wildcards: os.path.join("/nfs/research/zi/dander/amira_paper_latest/ENA_evaluation/Klebsiella_pneumoniae/nanopore_reads", wildcards.nanopore_sample + ".fastq.gz")
+        reads=lambda wildcards: os.path.join("nanopore_reads", wildcards.nanopore_sample + ".fastq.gz")
     output:
         sample_output=directory(os.path.join(output_dir, "Amira_output.v0.11.0", "{nanopore_sample}"))
     threads: 1
@@ -82,7 +82,7 @@ rule get_true_gene_content:
 
 rule check_amira_allele_coverages:
     input:
-        reads=lambda wildcards: os.path.join("/nfs/research/zi/dander/amira_paper_latest/ENA_evaluation/Klebsiella_pneumoniae/nanopore_reads", wildcards.nanopore_sample + ".fastq.gz"),
+        reads=lambda wildcards: os.path.join("nanopore_reads", wildcards.nanopore_sample + ".fastq.gz"),
         amira_output=os.path.join(output_dir, "Amira_output.v0.11.0", "{nanopore_sample}")
     output:
         sample_output=directory(os.path.join(output_dir, "amira_allele_coverages", "{nanopore_sample}"))
